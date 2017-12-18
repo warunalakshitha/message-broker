@@ -18,16 +18,20 @@
  */
 package org.wso2.broker.core.security.exception;
 
-/**
- * This Exception class represents authentication failures.
- */
-public class BrokerSecurityException extends Exception {
+import javax.security.auth.login.LoginException;
 
-    public BrokerSecurityException(String message) {
+/**
+ * This Exception class represents login failures.
+ */
+public class BrokerAuthenticationException extends LoginException {
+    private Throwable cause;
+
+    public BrokerAuthenticationException(String message) {
         super(message);
     }
-
-    public BrokerSecurityException(String message, Throwable throwable) {
-        super(message, throwable);
+    public BrokerAuthenticationException(String message, Throwable throwable) {
+        super(message);
+        this.cause = throwable;
+        initCause(cause);
     }
 }

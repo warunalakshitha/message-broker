@@ -126,12 +126,9 @@ public class Server {
         protected void initChannel(SocketChannel socketChannel) {
             socketChannel.pipeline()
                          .addLast(new AmqpDecoder())
-                         .addLast(new AmqpEncoder())
-                         .addLast(new AmqpConnectionHandler(broker))
+                         .addLast(new AmqpEncoder()).addLast(new AmqpConnectionHandler(broker, hostname))
                          .addLast(new AmqpMessageWriter())
                          .addLast(ioExecutors, new BlockingTaskHandler());
         }
     }
-
-
 }

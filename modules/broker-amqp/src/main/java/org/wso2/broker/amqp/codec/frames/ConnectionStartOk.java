@@ -30,7 +30,6 @@ import org.wso2.broker.common.data.types.FieldTable;
 import org.wso2.broker.common.data.types.LongString;
 import org.wso2.broker.common.data.types.ShortString;
 import org.wso2.broker.core.Broker;
-import org.wso2.broker.core.security.exception.BrokerSecurityException;
 import org.wso2.broker.core.security.sasl.SaslServerBuilder;
 
 import javax.security.sasl.Sasl;
@@ -102,22 +101,22 @@ public class ConnectionStartOk extends MethodFrame {
         try {
             if (saslServerBuilder != null) {
                 saslServer = Sasl.createSaslServer(mechanisms.toString(), AmqConstant.AMQP_PROTOCOL_IDENTIFIER,
-                        broker.getBrokerConfiguration().getTransport().getHostName(), saslServerBuilder.getProperties(),
+                        connectionHandler.getHostName(), saslServerBuilder.getProperties(),
                         saslServerBuilder.getCallbackHandler());
             } else {
-                throw new BrokerSecurityException("Server does not support for mechanism: " + mechanisms);
+                throw new SaslException("Server does not support for mechanism: " + mechanisms);
             }
             if (saslServer != null) {
                 saslServer.evaluateResponse(response.getBytes());
                 if (saslServer.isComplete() && saslServer.getAuthorizationID() != null) {
                     return true;
                 } else {
-                    throw new BrokerSecurityException("Authentication Failed");
+                    throw new SaslException("Authentication Failed");
                 }
             } else {
-                throw new BrokerSecurityException("Sasl server cannot be found for mechanism: " + mechanisms);
+                throw new SaslException("Sasl server cannot be found for mechanism: " + mechanisms);
             }
-        } catch (SaslException | BrokerSecurityException e) {
+        } catch (SaslException e) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Exception occurred while authenticating incoming connection ", e);
             }

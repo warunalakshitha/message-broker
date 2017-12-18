@@ -29,10 +29,10 @@ import org.wso2.broker.core.security.user.User;
 import org.wso2.broker.core.security.user.UserStoreManager;
 import org.wso2.broker.core.security.user.UsersFile;
 import org.wso2.broker.core.security.util.BrokerSecurityConstants;
-import org.yaml.snakeyaml.Yaml;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import org.wso2.carbon.config.ConfigProviderFactory;
+import org.wso2.carbon.config.ConfigurationException;
+import org.wso2.carbon.config.provider.ConfigProvider;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -40,7 +40,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
-import javax.naming.ConfigurationException;
 
 /**
  * Starting point of the broker.
@@ -49,15 +48,14 @@ public class Main {
 
     private static final Logger log = LoggerFactory.getLogger(Main.class);
 
-
     public static void main(String[] args) throws Exception {
         try {
             ConfigProvider configProvider = initConfigProvider();
             BrokerConfiguration configuration = configProvider.getConfigurationObject("broker",
-                                                                                      BrokerConfiguration.class);
+                    BrokerConfiguration.class);
             AmqpServerConfiguration serverConfiguration = configProvider
                     .getConfigurationObject("transport.amqp", AmqpServerConfiguration.class);
-
+            loadAuthConfigurations();
             Broker broker = new Broker(configuration);
             broker.startMessageDelivery();
             Server amqpServer = new Server(broker, serverConfiguration);
@@ -77,7 +75,6 @@ public class Main {
      *  <b>Note: </b> if provided configuration file cannot be read broker will not start.
      * @return a configuration object.
      */
-
     private static ConfigProvider initConfigProvider() throws ConfigurationException {
         Path brokerYamlFile;
         String brokerFilePath = System.getProperty(BrokerConfiguration.SYSTEM_PARAM_BROKER_CONFIG_FILE);
@@ -87,6 +84,61 @@ public class Main {
         } else {
             brokerYamlFile = Paths.get(brokerFilePath).toAbsolutePath();
         }
+
         return ConfigProviderFactory.getConfigProvider(brokerYamlFile, null);
+    }
+
+    private static void loadAuthConfigurations() throws ConfigurationException {
+        loadJaaSConfiguration();
+        loadUsers();
+    }
+
+    /**
+     * Configure JaaS config to load login modules
+     */
+    private static void loadJaaSConfiguration() {
+        InputStream resourceStream = null;
+        String jaasConfigPath = System.getProperty(BrokerSecurityConstants.SYSTEM_PARAM_JAAS_CONFIG);
+        if (jaasConfigPath == null || jaasConfigPath.trim().isEmpty()) {
+            try {
+                log.info("Using in-built configuration file -" + BrokerSecurityConstants.JAAS_FILE_NAME);
+                resourceStream = Main.class.getResourceAsStream("/" + BrokerSecurityConstants.JAAS_FILE_NAME);
+                Path path = Paths.get("", BrokerSecurityConstants.JAAS_FILE_NAME).toAbsolutePath();
+                Files.copy(resourceStream, path, StandardCopyOption.REPLACE_EXISTING);
+                System.setProperty(BrokerSecurityConstants.SYSTEM_PARAM_JAAS_CONFIG, path.toString());
+            } catch (IOException e) {
+                log.error("Unable to load the file - " + BrokerSecurityConstants.JAAS_FILE_NAME, e);
+            } finally {
+                try {
+                    if (resourceStream != null) {
+                        resourceStream.close();
+                    }
+                } catch (IOException e) {
+                    log.error("Error while closing file - " + BrokerSecurityConstants.JAAS_FILE_NAME, e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Loads the users from users.yaml during broker startup
+     */
+    private static void loadUsers() throws ConfigurationException {
+        Path usersYamlFile;
+        String usersFilePath = System.getProperty(BrokerSecurityConstants.SYSTEM_PARAM_USERS_CONFIG);
+        if (usersFilePath == null || usersFilePath.trim().isEmpty()) {
+            // use current path.
+            usersYamlFile = Paths.get("", BrokerSecurityConstants.USERS_FILE_NAME).toAbsolutePath();
+        } else {
+            usersYamlFile = Paths.get(usersFilePath).toAbsolutePath();
+        }
+        ConfigProvider configProvider = ConfigProviderFactory.getConfigProvider(usersYamlFile, null);
+        UsersFile usersFile = configProvider.getConfigurationObject("users", UsersFile.class);
+        if (usersFile != null) {
+            List<User> users = usersFile.getUsers();
+            for (User user : users) {
+                UserStoreManager.addUser(user);
+            }
+        }
     }
 }

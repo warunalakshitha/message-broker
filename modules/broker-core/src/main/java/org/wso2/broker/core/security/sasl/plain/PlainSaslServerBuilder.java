@@ -18,7 +18,7 @@
  */
 package org.wso2.broker.core.security.sasl.plain;
 
-import org.wso2.broker.core.security.jaas.UsernamePasswordCallbackHandler;
+import org.wso2.broker.core.security.jaas.UserNamePasswordCallbackHandler;
 import org.wso2.broker.core.security.sasl.SaslServerBuilder;
 
 import java.util.Map;
@@ -34,7 +34,7 @@ public class PlainSaslServerBuilder implements SaslServerBuilder {
     private CallbackHandler callbackHandler;
 
     public PlainSaslServerBuilder() {
-        callbackHandler = new UsernamePasswordCallbackHandler();
+        callbackHandler = new UserNamePasswordCallbackHandler();
     }
 
     public String getMechanismName() {

@@ -40,9 +40,11 @@ public class AmqpConnectionHandler extends ChannelInboundHandlerAdapter {
     private static final Logger LOGGER = LoggerFactory.getLogger(AmqpConnectionHandler.class);
     private final Map<Integer, AmqpChannel> channels = new HashMap<>();
     private final Broker broker;
+    private final String hostName;
 
-    public AmqpConnectionHandler(Broker broker) {
+    public AmqpConnectionHandler(Broker broker, String hostname) {
         this.broker = broker;
+        this.hostName = hostname;
     }
 
     public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
@@ -109,5 +111,9 @@ public class AmqpConnectionHandler extends ChannelInboundHandlerAdapter {
 
     public Broker getBroker() {
         return broker;
+    }
+
+    public String getHostName() {
+        return hostName;
     }
 }

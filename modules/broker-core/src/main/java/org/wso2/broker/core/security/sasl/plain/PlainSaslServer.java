@@ -18,7 +18,7 @@
  */
 package org.wso2.broker.core.security.sasl.plain;
 
-import org.wso2.broker.core.security.jaas.UsernamePasswordCallbackHandler;
+import org.wso2.broker.core.security.jaas.UserNamePasswordCallbackHandler;
 import org.wso2.broker.core.security.util.BrokerSecurityConstants;
 
 import java.io.IOException;
@@ -75,8 +75,8 @@ public class PlainSaslServer implements SaslServer {
                     authcidNullPosition - authzidNullPosition - 1, StandardCharsets.UTF_8);
             int passwordLen = response.length - authcidNullPosition - 1;
             String password = new String(response, authcidNullPosition + 1, passwordLen, StandardCharsets.UTF_8);
-            ((UsernamePasswordCallbackHandler) callbackHandler).setUsername(authcid);
-            ((UsernamePasswordCallbackHandler) callbackHandler).setPassword(password.toCharArray());
+            ((UserNamePasswordCallbackHandler) callbackHandler).setUsername(authcid);
+            ((UserNamePasswordCallbackHandler) callbackHandler).setPassword(password.toCharArray());
             LoginContext loginContext = null;
             try {
                 loginContext = new LoginContext(BrokerSecurityConstants.DEFAULT_JAAS_LOGIN_MODULE, callbackHandler);

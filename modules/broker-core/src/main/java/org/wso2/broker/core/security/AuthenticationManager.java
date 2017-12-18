@@ -26,8 +26,8 @@ import org.wso2.broker.core.security.sasl.plain.PlainSaslServerBuilder;
 import org.wso2.broker.core.security.util.BrokerSecurityConstants;
 
 import java.security.Security;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Class for manage authentication of message broker incoming connections
@@ -40,7 +40,7 @@ public class AuthenticationManager {
     /**
      * Map of SASL Server mechanisms
      */
-    private Map<String, SaslServerBuilder> saslMechanisms = new HashMap<>();
+    private Map<String, SaslServerBuilder> saslMechanisms = new ConcurrentHashMap<>();
 
     /**
      * Constructor which will initialize authentication manager

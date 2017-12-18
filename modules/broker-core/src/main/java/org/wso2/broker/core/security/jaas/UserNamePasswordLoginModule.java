@@ -20,7 +20,7 @@ package org.wso2.broker.core.security.jaas;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wso2.broker.core.security.exception.BrokerLoginException;
+import org.wso2.broker.core.security.exception.BrokerAuthenticationException;
 import org.wso2.broker.core.security.user.UserStoreManager;
 
 import java.io.IOException;
@@ -37,14 +37,14 @@ import javax.security.auth.spi.LoginModule;
 /**
  * Default JaaS login module {@link LoginModule} for Message broker.
  * This will be configured in jaas.conf file.
-    AuthConfig {
-        org.wso2.broker.core.security.jaas.UsernamePasswordLoginModule required;
-    };
+ * AuthConfig {
+ * org.wso2.broker.core.security.jaas.UserNamePasswordLoginModule required;
+ * };
  */
-public class UsernamePasswordLoginModule implements LoginModule {
+public class UserNamePasswordLoginModule implements LoginModule {
 
-    private static final Logger log = LoggerFactory.getLogger(UsernamePasswordLoginModule.class);
-    private String username;
+    private static final Logger log = LoggerFactory.getLogger(UserNamePasswordLoginModule.class);
+    private String userName;
     private char[] password;
     private boolean success = false;
     private CallbackHandler callbackHandler;
@@ -57,36 +57,36 @@ public class UsernamePasswordLoginModule implements LoginModule {
 
     @Override
     public boolean login() throws LoginException {
-        NameCallback usernameCallback = new NameCallback("username");
+        NameCallback userNameCallback = new NameCallback("userName");
         PasswordCallback passwordCallback = new PasswordCallback("password", false);
-        Callback[] callbacks = { usernameCallback, passwordCallback };
+        Callback[] callbacks = { userNameCallback, passwordCallback };
         try {
             callbackHandler.handle(callbacks);
         } catch (UnsupportedCallbackException e) {
-            throw new BrokerLoginException("Callback type does not support. ", e);
+            throw new BrokerAuthenticationException("Callback type does not support. ", e);
         } catch (IOException e) {
-            throw new BrokerLoginException("Exception occurred while handling authentication data. ", e);
+            throw new BrokerAuthenticationException("Exception occurred while handling authentication data. ", e);
         }
-        username = usernameCallback.getName();
+        userName = userNameCallback.getName();
         password = passwordCallback.getPassword();
-        success = validateUserPassword(username, password);
+        success = validateUserPassword(userName, password);
         return success;
     }
 
     /**
      * Authenticate user credentials using userstore manager
-     * @param username Username
+     *
+     * @param userName Username
      * @param password Password
      * @return Denotes the whether user authentication success ot not
      */
-    private boolean validateUserPassword(String username, char[] password) {
-        return username != null && password != null && UserStoreManager
-                .authenticate(username, String.valueOf(password));
+    private boolean validateUserPassword(String userName, char[] password) throws BrokerAuthenticationException {
+        return userName != null && password != null && UserStoreManager.authenticate(userName, password);
     }
 
     @Override
     public boolean commit() throws LoginException {
-        username = null;
+        userName = null;
         for (int i = 0; i < password.length; i++) {
             password[i] = ' ';
         }
@@ -103,7 +103,7 @@ public class UsernamePasswordLoginModule implements LoginModule {
     @Override
     public boolean logout() throws LoginException {
         success = false;
-        username = null;
+        userName = null;
         if (password != null) {
             for (int i = 0; i < password.length; i++) {
                 password[i] = ' ';
