@@ -75,4 +75,6 @@ $JAVACMD \
     -Dfile.encoding=UTF8 \
     -Djava.util.logging.config.file="$MESSAGE_BROKER_HOME/conf/log4j.properties" \
     -Dbroker.config="$MESSAGE_BROKER_HOME/conf/broker.yaml" \
+    -Djava.security.auth.login.config="$MESSAGE_BROKER_HOME/conf/jaas.conf" \
+    -Dbroker.users.config="$MESSAGE_BROKER_HOME/conf/users.yaml" \
     org.wso2.broker.Main

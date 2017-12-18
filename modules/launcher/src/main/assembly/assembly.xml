@@ -29,6 +29,8 @@
             <includes>
                 <include>log4j.properties</include>
                 <include>broker.yaml</include>
+                <include>users.yaml</include>
+                <include>jaas.conf</include>
             </includes>
         </fileSet>
         <fileSet>

@@ -24,6 +24,10 @@ import org.slf4j.LoggerFactory;
 import org.wso2.broker.amqp.Server;
 import org.wso2.broker.core.Broker;
 import org.wso2.broker.core.configuration.BrokerConfiguration;
+import org.wso2.broker.core.security.user.User;
+import org.wso2.broker.core.security.user.UserStoreManager;
+import org.wso2.broker.core.security.user.UsersFile;
+import org.wso2.broker.core.security.util.BrokerSecurityConstants;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
@@ -31,7 +35,11 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.List;
 
 /**
  * Starting point of the broker.
@@ -43,13 +51,13 @@ public class Main {
     public static void main(String[] args) throws InterruptedException {
 
         BrokerConfiguration configuration = loadConfiguration();
+        loadAuthConfigurations();
         Broker broker = new Broker(configuration);
         broker.startMessageDelivery();
         Server amqpServer = new Server(broker, configuration);
         amqpServer.run();
     }
 
-    
     /**
      * Loads configurations during the broker start up.
      * method will try to <br/>
@@ -61,10 +69,7 @@ public class Main {
      * @return a configuration object.
      */
     private static BrokerConfiguration loadConfiguration() {
-        
-        BrokerConfiguration configuration = null;
-        File brokerYamlFile = null;
-
+        File brokerYamlFile;
         String brokerFilePath = System.getProperty(BrokerConfiguration.SYSTEM_PARAM_BROKER_CONFIG_FILE);
         if (brokerFilePath == null || brokerFilePath.trim().isEmpty()) {
             // use current path.
@@ -73,37 +78,98 @@ public class Main {
         } else {
             brokerYamlFile = Paths.get(brokerFilePath).toAbsolutePath().toFile();
         }
+        return readConfig(BrokerConfiguration.BROKER_FILE_NAME, brokerYamlFile, BrokerConfiguration.class);
+    }
 
-        InputStream yamlStream = null;
+    private static void loadAuthConfigurations() {
+        loadJaaSConfiguration();
+        loadUsers();
+    }
 
-        try {
-            if (brokerYamlFile.canRead()) {
-                yamlStream = new FileInputStream(brokerYamlFile);
-            } else {
-                log.info("using in-built configuration file -" + BrokerConfiguration.BROKER_FILE_NAME);
-                yamlStream = Main.class.getResourceAsStream("/" + BrokerConfiguration.BROKER_FILE_NAME);
-
-                if (yamlStream == null) {
-                    throw new FileNotFoundException(
-                            "unable to find - " + BrokerConfiguration.BROKER_FILE_NAME + " in class path");
+    /**
+     * Configure JaaS config to load login modules
+     */
+    private static void loadJaaSConfiguration() {
+        InputStream resourceStream = null;
+        String jaasConfigPath = System.getProperty(BrokerSecurityConstants.SYSTEM_PARAM_JAAS_CONFIG);
+        if (jaasConfigPath == null || jaasConfigPath.trim().isEmpty()) {
+            try {
+                log.info("Using in-built configuration file -" + BrokerSecurityConstants.JAAS_FILE_NAME);
+                resourceStream = Main.class.getResourceAsStream("/" + BrokerSecurityConstants.JAAS_FILE_NAME);
+                Path path = Paths.get("", BrokerSecurityConstants.JAAS_FILE_NAME).toAbsolutePath();
+                Files.copy(resourceStream, path, StandardCopyOption.REPLACE_EXISTING);
+                System.setProperty(BrokerSecurityConstants.SYSTEM_PARAM_JAAS_CONFIG, path.toString());
+            } catch (IOException e) {
+                log.error("Unable to load the file - " + BrokerSecurityConstants.JAAS_FILE_NAME, e);
+            } finally {
+                try {
+                    if (resourceStream != null) {
+                        resourceStream.close();
+                    }
+                } catch (IOException e) {
+                    log.error("Error while closing file - " + BrokerSecurityConstants.JAAS_FILE_NAME, e);
                 }
             }
+        }
+    }
 
+    /**
+     * Loads the users from users.yaml during broker startup
+     */
+    private static void loadUsers() {
+        File usersYamlFile;
+        String usersFilePath = System.getProperty(BrokerSecurityConstants.SYSTEM_PARAM_USERS_CONFIG);
+        if (usersFilePath == null || usersFilePath.trim().isEmpty()) {
+            // use current path.
+            usersYamlFile = Paths.get("", BrokerSecurityConstants.USERS_FILE_NAME).toAbsolutePath().toFile();
+        } else {
+            usersYamlFile = Paths.get(usersFilePath).toAbsolutePath().toFile();
+        }
+        UsersFile usersFile = readConfig(BrokerSecurityConstants.USERS_FILE_NAME, usersYamlFile, UsersFile.class);
+        if (usersFile != null) {
+            List<User> users = usersFile.getUsers();
+            for (User user : users) {
+                UserStoreManager.addUser(user);
+            }
+        }
+    }
+
+    /**
+     * This method is used to read yaml configuration and load the content to given class object
+     *
+     * @param fileName  Yaml file name
+     * @param yamlFile  Yaml file
+     * @param classType Class which will map the yaml file contents
+     * @param <T>       Type of the Class
+     * @return Object mapping based on given class type
+     */
+    private static <T> T readConfig(String fileName, File yamlFile, Class<T> classType) {
+        InputStream yamlStream = null;
+        T configuration = null;
+        try {
+            if (yamlFile != null && yamlFile.canRead()) {
+                yamlStream = new FileInputStream(yamlFile);
+            } else {
+                log.info("Using in-built configuration file -" + fileName);
+                yamlStream = Main.class.getResourceAsStream("/" + fileName);
+
+                if (yamlStream == null) {
+                    throw new FileNotFoundException("Unable to find - " + fileName + " in class path");
+                }
+            }
             Yaml yaml = new Yaml();
-            configuration = yaml.loadAs(yamlStream, BrokerConfiguration.class);
-
+            configuration = yaml.loadAs(yamlStream, classType);
         } catch (FileNotFoundException e) {
-            String msg = "unable to find - " + BrokerConfiguration.BROKER_FILE_NAME + " broker will terminate now";
+            String msg = "Unable to find - " + fileName + " broker will terminate now";
             log.warn(msg, e);
             throw new RuntimeException(msg, e);
         } finally {
-
             try {
                 if (yamlStream != null) {
                     yamlStream.close();
                 }
             } catch (IOException e) {
-                log.error("error while closing file - " + BrokerConfiguration.BROKER_FILE_NAME, e);
+                log.error("Error while closing file - " + fileName, e);
             }
         }
         return configuration;
