@@ -30,7 +30,7 @@
     <groupId>org.wso2.messaging</groupId> 
     <artifactId>message-broker</artifactId>
     <packaging>pom</packaging>
-    <version>1.0.34-SNAPSHOT</version>
+    <version>1.0.40-SNAPSHOT</version>
     <name>Message Broker</name>
     <description>A high performing, lightweight broker component</description>
 
@@ -90,8 +90,7 @@
             <dependency>
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>annotations</artifactId>
-                <scope>compile</scope>
-                <version>3.0.1</version>
+                <version>${findbugs.annotations.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
@@ -124,6 +123,11 @@
                 <artifactId>geronimo-jms_1.1_spec</artifactId>
                 <version>${geronimo-jms_1.1_spec.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.config</groupId>
+                <artifactId>org.wso2.carbon.config</artifactId>
+                <version>${carbon.config.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -146,7 +150,7 @@
     </build>
 
     <properties>
-        <broker.version>1.0.34-SNAPSHOT</broker.version>
+        <broker.version>1.0.40-SNAPSHOT</broker.version>
         <netty-all.version>4.1.17.Final</netty-all.version>
         <slf4j.version>1.7.25</slf4j.version>
         <testng.version>6.11</testng.version>
@@ -165,5 +169,7 @@
             **org/wso2/broker/core/selector/generated/*
         </maven.checkstyleplugin.excludes>
         <mavan.findbugsplugin.exclude.file>findbugs-exclude.xml</mavan.findbugsplugin.exclude.file>
+        <carbon.config.version>2.1.5</carbon.config.version>
+        <findbugs.annotations.version>3.0.1</findbugs.annotations.version>
     </properties>
 </project>
