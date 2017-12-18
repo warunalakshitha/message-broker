@@ -19,21 +19,36 @@
 
 package org.wso2.broker.amqp.codec.frames;
 
+import com.google.common.base.Charsets;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.wso2.broker.amqp.codec.AmqConstant;
 import org.wso2.broker.amqp.codec.AmqpConnectionHandler;
 import org.wso2.broker.common.data.types.FieldTable;
 import org.wso2.broker.common.data.types.LongString;
 import org.wso2.broker.common.data.types.ShortString;
+import org.wso2.broker.core.Broker;
+import org.wso2.broker.core.security.exception.BrokerSecurityException;
+import org.wso2.broker.core.security.sasl.SaslServerBuilder;
+
+import javax.security.sasl.Sasl;
+import javax.security.sasl.SaslException;
+import javax.security.sasl.SaslServer;
 
 /**
  * AMQP connection.start frame.
  */
 public class ConnectionStartOk extends MethodFrame {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionStartOk.class);
     private final FieldTable clientProperties;
     private final ShortString mechanisms;
     private final ShortString locales;
     private final LongString response;
+    private static final short CLASS_ID = 10;
+    private static final short METHOD_ID = 11;
 
     public ConnectionStartOk(int channel, FieldTable clientProperties, ShortString mechanisms,
             ShortString locales, LongString response) {
@@ -59,8 +74,14 @@ public class ConnectionStartOk extends MethodFrame {
 
     @Override
     public void handle(ChannelHandlerContext ctx, AmqpConnectionHandler connectionHandler) {
-        // TODO add authentication
-        ctx.writeAndFlush(new ConnectionTune(256, 65535, 0));
+        if (mechanisms == null || authenticate(connectionHandler)) {
+            ctx.writeAndFlush(new ConnectionTune(256, 65535, 0));
+        } else {
+            String replyText = "Authentication Failed";
+            ctx.writeAndFlush(
+                    new ConnectionClose(403, new ShortString(replyText.length(), replyText.getBytes(Charsets.UTF_8)),
+                            CLASS_ID, METHOD_ID));
+        }
     }
 
     public static AmqMethodBodyFactory getFactory() {
@@ -71,5 +92,36 @@ public class ConnectionStartOk extends MethodFrame {
             ShortString locale = ShortString.parse(buf);
             return new ConnectionStartOk(channel, clientProperties, mechanisms, locale, response);
         };
+    }
+
+    private boolean authenticate(AmqpConnectionHandler connectionHandler) {
+        Broker broker = connectionHandler.getBroker();
+        SaslServer saslServer;
+        SaslServerBuilder saslServerBuilder = broker.getAuthenticationManager().getSaslMechanisms()
+                .get(mechanisms.toString());
+        try {
+            if (saslServerBuilder != null) {
+                saslServer = Sasl.createSaslServer(mechanisms.toString(), AmqConstant.AMQP_PROTOCOL_IDENTIFIER,
+                        broker.getBrokerConfiguration().getTransport().getHostName(), saslServerBuilder.getProperties(),
+                        saslServerBuilder.getCallbackHandler());
+            } else {
+                throw new BrokerSecurityException("Server does not support for mechanism: " + mechanisms);
+            }
+            if (saslServer != null) {
+                saslServer.evaluateResponse(response.getBytes());
+                if (saslServer.isComplete() && saslServer.getAuthorizationID() != null) {
+                    return true;
+                } else {
+                    throw new BrokerSecurityException("Authentication Failed");
+                }
+            } else {
+                throw new BrokerSecurityException("Sasl server cannot be found for mechanism: " + mechanisms);
+            }
+        } catch (SaslException | BrokerSecurityException e) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Exception occurred while authenticating incoming connection ", e);
+            }
+        }
+        return false;
     }
 }

@@ -106,4 +106,8 @@ public class AmqpConnectionHandler extends ChannelInboundHandlerAdapter {
             channel.close();
         }
     }
+
+    public Broker getBroker() {
+        return broker;
+    }
 }
