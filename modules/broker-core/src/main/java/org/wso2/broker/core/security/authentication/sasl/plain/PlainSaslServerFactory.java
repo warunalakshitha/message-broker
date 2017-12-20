@@ -18,41 +18,26 @@
  */
 package org.wso2.broker.core.security.sasl.plain;
 
-import org.wso2.broker.core.security.jaas.UserNamePasswordCallbackHandler;
-import org.wso2.broker.core.security.sasl.SaslServerBuilder;
-
 import java.util.Map;
 import javax.security.auth.callback.CallbackHandler;
+import javax.security.sasl.SaslException;
+import javax.security.sasl.SaslServer;
 import javax.security.sasl.SaslServerFactory;
 
 /**
- * Class implements {@link SaslServerBuilder}  will manage the custom SASL provider mechanisms
+ * SASL server factory for {@link PlainSaslServer}  which will be registered using
+ * {@link org.wso2.broker.core.security.sasl.SaslSecurityProvider}
  */
-public class PlainSaslServerBuilder implements SaslServerBuilder {
+public class PlainSaslServerFactory implements SaslServerFactory {
 
-    static final String MECHANISM = "PLAIN";
-    private CallbackHandler callbackHandler;
-
-    public PlainSaslServerBuilder() {
-        callbackHandler = new UserNamePasswordCallbackHandler();
-    }
-
-    public String getMechanismName() {
-        return MECHANISM;
+    @Override
+    public SaslServer createSaslServer(String mechanism, String protocol, String serverName, Map<String, ?> props,
+            CallbackHandler cbh) throws SaslException {
+        return (PlainSaslServerBuilder.MECHANISM.equals(mechanism)) ? new PlainSaslServer(cbh) : null;
     }
 
     @Override
-    public CallbackHandler getCallbackHandler() {
-        return callbackHandler;
-    }
-
-    @Override
-    public Map<String, ?> getProperties() {
-        return null;
-    }
-
-    @Override
-    public Class<? extends SaslServerFactory> getServerFactoryClass() {
-        return PlainSaslServerFactory.class;
+    public String[] getMechanismNames(Map<String, ?> props) {
+        return new String[0];
     }
 }

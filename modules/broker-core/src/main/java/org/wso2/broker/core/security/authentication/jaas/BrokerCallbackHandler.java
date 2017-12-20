@@ -27,9 +27,9 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 
 /**
  * Class callback handler which is used to set user name and password given in incoming connection request.
- * This will be used by {@link UserNamePasswordCallbackHandler} to retrive user authentication data to validate user
+ * This will be used by {@link BrokerCallbackHandler} to retrive user authentication data to validate user
  */
-public class UserNamePasswordCallbackHandler implements CallbackHandler {
+public class BrokerCallbackHandler implements CallbackHandler {
 
     private String username;
     private char[] password;

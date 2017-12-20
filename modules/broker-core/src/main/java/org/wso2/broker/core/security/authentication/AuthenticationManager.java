@@ -20,7 +20,7 @@ package org.wso2.broker.core.security;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wso2.broker.core.security.sasl.JCAProvider;
+import org.wso2.broker.core.security.sasl.SaslSecurityProvider;
 import org.wso2.broker.core.security.sasl.SaslServerBuilder;
 import org.wso2.broker.core.security.sasl.plain.PlainSaslServerBuilder;
 import org.wso2.broker.core.security.util.BrokerSecurityConstants;
@@ -57,7 +57,8 @@ public class AuthenticationManager {
         PlainSaslServerBuilder plainSaslServerBuilder = new PlainSaslServerBuilder();
         saslMechanisms.put(plainSaslServerBuilder.getMechanismName(), plainSaslServerBuilder);
         // Register given Sasl Server factories
-        if (Security.insertProviderAt(new JCAProvider(BrokerSecurityConstants.PROVIDER_NAME, saslMechanisms), 1)
+        if (Security.insertProviderAt(new SaslSecurityProvider(BrokerSecurityConstants.PROVIDER_NAME, saslMechanisms)
+                , 1)
                 == -1) {
             log.error("Unable to load AMQ security authentication providers.");
         } else {

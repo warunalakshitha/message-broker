@@ -14,7 +14,8 @@
 #   limitations under the License.
 ################################################################################
 
-users:
--
-  username: admin
-  password: admin
+wso2.users:
+ users:
+ -
+   username: admin
+   password: admin

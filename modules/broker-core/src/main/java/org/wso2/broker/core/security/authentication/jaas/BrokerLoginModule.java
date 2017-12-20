@@ -38,12 +38,12 @@ import javax.security.auth.spi.LoginModule;
  * Default JaaS login module {@link LoginModule} for Message broker.
  * This will be configured in jaas.conf file.
  * AuthConfig {
- * org.wso2.broker.core.security.jaas.UserNamePasswordLoginModule required;
+ * org.wso2.broker.core.security.jaas.BrokerLoginModule required;
  * };
  */
-public class UserNamePasswordLoginModule implements LoginModule {
+public class BrokerLoginModule implements LoginModule {
 
-    private static final Logger log = LoggerFactory.getLogger(UserNamePasswordLoginModule.class);
+    private static final Logger log = LoggerFactory.getLogger(BrokerLoginModule.class);
     private String userName;
     private char[] password;
     private boolean success = false;

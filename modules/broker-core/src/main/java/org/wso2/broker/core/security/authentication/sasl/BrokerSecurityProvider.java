@@ -16,11 +16,11 @@
  *   under the License.
  *
  */
-package org.wso2.broker.core.security.sasl;
+package org.wso2.broker.core.security.authentication.sasl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wso2.broker.core.security.util.BrokerSecurityConstants;
+import org.wso2.broker.core.security.authentication.util.BrokerSecurityConstants;
 
 import java.security.Provider;
 import java.util.Map;
@@ -28,7 +28,7 @@ import java.util.Map;
 /**
  * {@link Provider} implementation for register AMQ SASL server factories in Java Security .
  */
-public class JCAProvider extends Provider {
+public class SaslSecurityProvider extends Provider {
 
     private static final Logger log = LoggerFactory.getLogger(SaslServerBuilder.class);
     private static final long serialVersionUID = -1576616958900657930L;
@@ -39,7 +39,7 @@ public class JCAProvider extends Provider {
      * @param name        the provider name.
      * @param providerMap map of SASLServerProviders
      */
-    public JCAProvider(String name, Map<String, SaslServerBuilder> providerMap) {
+    public SaslSecurityProvider(String name, Map<String, SaslServerBuilder> providerMap) {
         super(name, BrokerSecurityConstants.JCA_PROVIDER_VERSION, BrokerSecurityConstants.JCA_PROVIDER_INFO);
         register(providerMap);
     }
