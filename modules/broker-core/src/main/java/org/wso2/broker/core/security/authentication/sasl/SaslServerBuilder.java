@@ -48,8 +48,9 @@ public interface SaslServerBuilder {
     Map<String, ?> getProperties();
 
     /**
-     * Get the class that is the server factory {@link SaslServerFactory} for the JCA registration.
-     * @return null if no JCA registration is required, otherwise return the class
+     * Get the class that is the server factory {@link SaslServerFactory} for the Java Cryptography Architecture
+     * (JCA) registration.
+     * @return Null if no JCA registration is required, otherwise return the class
      * that will be used in JCA registration
      */
     Class<? extends SaslServerFactory> getServerFactoryClass();

@@ -65,7 +65,7 @@ public class AuthenticationManager {
     }
 
     /**
-     * Register Plain security provider mechanisms
+     * Register security provider mechanisms
      */
     private void registerSASLServers() {
         // create PLAIN SaslServer builder

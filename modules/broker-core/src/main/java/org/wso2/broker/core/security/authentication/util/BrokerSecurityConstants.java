@@ -24,11 +24,11 @@ package org.wso2.broker.core.security.authentication.util;
 public class BrokerSecurityConstants {
 
     /*
-    JCA Provider related constants
+    Broker security provider related constants
      */
     public static final String SASL_SERVER_FACTORY_PREFIX = "SaslServerFactory.";
-    public static final String JCA_PROVIDER_INFO = "Provider for registry AMQP SASL server factories";
-    public static final double JCA_PROVIDER_VERSION = 1.0;
+    public static final String BROKER_SECURITY_PROVIDER_INFO = "Provider for registry AMQP SASL server factories";
+    public static final double BROKER_SECURITY_PROVIDER_VERSION = 1.0;
     // The name for the amq Java Cryptography Architecture (JCA) provider. This will be used to register Sasl servers
     public static final String PROVIDER_NAME = "AMQSASLProvider";
     public static final String AUTHENTICATOR_PROPERTY = "Authenticator";

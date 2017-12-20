@@ -40,12 +40,14 @@ public class BrokerSecurityProvider extends Provider {
      * @param providerMap map of SASLServerProviders
      */
     public BrokerSecurityProvider(String name, Map<String, SaslServerBuilder> providerMap) {
-        super(name, BrokerSecurityConstants.JCA_PROVIDER_VERSION, BrokerSecurityConstants.JCA_PROVIDER_INFO);
+        super(name, BrokerSecurityConstants.BROKER_SECURITY_PROVIDER_VERSION,
+                BrokerSecurityConstants.BROKER_SECURITY_PROVIDER_INFO);
         register(providerMap);
     }
 
     /**
      * Register given Sasl server factory list
+     *
      * @param providerMap Mp of sasl server builder
      */
     private void register(Map<String, SaslServerBuilder> providerMap) {
@@ -55,7 +57,8 @@ public class BrokerSecurityProvider extends Provider {
                 put(BrokerSecurityConstants.SASL_SERVER_FACTORY_PREFIX + saslServerBuilderEntry.getKey(),
                         saslServerBuilderEntry.getValue().getServerFactoryClass().getName());
             } else {
-                log.error("Cannot find server factory for security mechanism : " + saslServerBuilderEntry.getKey());
+                log.warn("Cannot find server factory for security mechanism : " + saslServerBuilderEntry.getKey()
+                        + ". This may be already supported by Java Security Provider.");
             }
         }
     }

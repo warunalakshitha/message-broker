@@ -90,6 +90,11 @@ public class ConnectionStartOk extends MethodFrame {
         };
     }
 
+    /**
+     * Method to authenticate incoming connection request on given mechanism
+     * @param connectionHandler Connection Handler
+     * @return Authentication result as success or not
+     */
     private boolean authenticate(AmqpConnectionHandler connectionHandler) {
         Broker broker = connectionHandler.getBroker();
         SaslServer saslServer;

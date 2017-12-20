@@ -48,6 +48,9 @@ public final class Broker {
         return brokerConfiguration;
     }
 
+    /*
+    Authentication manager for broker
+     */
     public AuthenticationManager getAuthenticationManager() {
         return authenticationManager;
     }

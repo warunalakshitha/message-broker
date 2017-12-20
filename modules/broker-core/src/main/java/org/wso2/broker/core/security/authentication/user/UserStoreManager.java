@@ -33,7 +33,7 @@ public class UserStoreManager {
     private static final Logger log = LoggerFactory.getLogger(UserStoreManager.class);
 
     /**
-     * Store the list of users
+     * Store the map of users
      */
     private static Map<String, User> users = new ConcurrentHashMap<>();
 

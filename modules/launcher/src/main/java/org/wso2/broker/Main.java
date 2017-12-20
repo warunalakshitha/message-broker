@@ -51,8 +51,8 @@ public class Main {
     public static void main(String[] args) throws Exception {
         try {
             ConfigProvider configProvider = initConfigProvider();
-            BrokerConfiguration configuration = configProvider
-                    .getConfigurationObject("broker", BrokerConfiguration.class);
+            BrokerConfiguration configuration = configProvider.getConfigurationObject("broker",
+                    BrokerConfiguration.class);
             AmqpServerConfiguration serverConfiguration = configProvider
                     .getConfigurationObject("transport.amqp", AmqpServerConfiguration.class);
             loadAuthConfigurations();
@@ -69,11 +69,10 @@ public class Main {
     /**
      * Loads configurations during the broker start up.
      * method will try to <br/>
-     * (1) Load the configuration file specified in 'broker.file' (e.g. -Dbroker.file=<FilePath>). <br/>
-     * (2) If -Dbroker.file is not specified, the broker.yaml file exists in current directory and load it. <br/>
-     * <p>
-     * <b>Note: </b> if provided configuration file cannot be read broker will not start.
+     *  (1) Load the configuration file specified in 'broker.file' (e.g. -Dbroker.file=<FilePath>). <br/>
+     *  (2) If -Dbroker.file is not specified, the broker.yaml file exists in current directory and load it. <br/>
      *
+     *  <b>Note: </b> if provided configuration file cannot be read broker will not start.
      * @return a configuration object.
      */
     private static ConfigProvider initConfigProvider() throws ConfigurationException {
