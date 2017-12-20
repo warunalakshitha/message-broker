@@ -18,9 +18,6 @@
  */
 package org.wso2.broker.core.security.authentication.sasl.plain;
 
-import org.wso2.broker.core.security.authentication.Authenticator;
-import org.wso2.broker.core.security.authentication.util.BrokerSecurityConstants;
-
 import java.util.Map;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.sasl.SaslException;
@@ -36,9 +33,7 @@ public class PlainSaslServerFactory implements SaslServerFactory {
     @Override
     public SaslServer createSaslServer(String mechanism, String protocol, String serverName, Map<String, ?> props,
             CallbackHandler cbh) throws SaslException {
-        return (PlainSaslServerBuilder.MECHANISM.equals(mechanism)) ?
-                new PlainSaslServer(cbh, (Authenticator) props.get(BrokerSecurityConstants.AUTHENTICATOR_PROPERTY)) :
-                null;
+        return (PlainSaslServerBuilder.MECHANISM.equals(mechanism)) ? new PlainSaslServer(cbh, props) : null;
     }
 
     @Override

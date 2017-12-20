@@ -23,16 +23,17 @@ import org.wso2.broker.core.security.authentication.exception.BrokerAuthenticati
 import javax.security.auth.callback.CallbackHandler;
 
 /**
- * Represents common interface to define security strategy.
+ * Represents common interface to define authentication.
  */
 public interface Authenticator {
 
     /**
      * Method to authenticate given user
      *
-     * @param callbackHandler Callback handler contain the security data. Services need to make requests for
-     *                        different types of information by passing individual Callbacks
-     * @return security success or not
+     * @param callbackHandler Callback handler contains the security information (ex. username and password).
+     *                        Services need to make requests for retrieve those security information by passing
+     *                        callbacks {@link javax.security.auth.callback.Callback}
+     * @return authentication success or not
      */
     boolean authenticate(CallbackHandler callbackHandler) throws BrokerAuthenticationException;
 

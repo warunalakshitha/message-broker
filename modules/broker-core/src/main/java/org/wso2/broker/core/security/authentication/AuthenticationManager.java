@@ -49,7 +49,8 @@ public class AuthenticationManager {
     private Authenticator authenticator;
 
     /**
-     * Constructor which will initialize authentication manager
+     * Constructor for initialize authentication manager and resgiter sasl servers for security provider
+     * mechanisms
      */
     public AuthenticationManager(String authenticatorClassName) {
 
@@ -86,7 +87,7 @@ public class AuthenticationManager {
     }
 
     /**
-     * Provides map of security mechanisms registered for amq authentication
+     * Provides map of security mechanisms registered for broker
      *
      * @return Registered security Mechanisms
      */

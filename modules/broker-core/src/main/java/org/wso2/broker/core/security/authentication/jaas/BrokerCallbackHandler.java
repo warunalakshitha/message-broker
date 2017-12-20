@@ -29,7 +29,8 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 
 /**
  * Class callback handler which is used to set user name and password given in incoming connection request.
- * This will be used by {@link BrokerCallbackHandler} to retrive user authentication data to validate user
+ * This will be used by {@link org.wso2.broker.core.security.authentication.Authenticator} to retrieve user
+ * authentication information to validate user
  */
 public class BrokerCallbackHandler implements CallbackHandler {
 

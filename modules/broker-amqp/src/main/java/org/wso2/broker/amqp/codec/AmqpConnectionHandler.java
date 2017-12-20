@@ -116,11 +116,20 @@ public class AmqpConnectionHandler extends ChannelInboundHandlerAdapter {
             channel.close();
         }
     }
-
+    /**
+     * Returns the {@link Broker} for the amq connection
+     *
+     * @return Broker
+     */
     public Broker getBroker() {
         return broker;
     }
 
+    /**
+     * Returns the hostname of the server for the amq connection
+     *
+     * @return Hostname broker
+     */
     public String getHostName() {
         return hostName;
     }

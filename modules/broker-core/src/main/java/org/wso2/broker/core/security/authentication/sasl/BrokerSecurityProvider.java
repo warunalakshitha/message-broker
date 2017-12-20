@@ -26,7 +26,7 @@ import java.security.Provider;
 import java.util.Map;
 
 /**
- * {@link Provider} implementation for register AMQ SASL server factories in Java Security .
+ * {@link Provider} implementation for register AMQ SASL server factories in Java Security.
  */
 public class BrokerSecurityProvider extends Provider {
 
@@ -34,7 +34,7 @@ public class BrokerSecurityProvider extends Provider {
     private static final long serialVersionUID = -1576616958900657930L;
 
     /**
-     * Constructs a provider with the specified name and sasl servers map
+     * Constructs a provider with the specified name and sasl server builders map
      *
      * @param name        the provider name.
      * @param providerMap map of SASLServerProviders
@@ -48,7 +48,7 @@ public class BrokerSecurityProvider extends Provider {
     /**
      * Register given Sasl server factory list
      *
-     * @param providerMap Mp of sasl server builder
+     * @param providerMap Map of sasl server builder
      */
     private void register(Map<String, SaslServerBuilder> providerMap) {
 
@@ -57,8 +57,8 @@ public class BrokerSecurityProvider extends Provider {
                 put(BrokerSecurityConstants.SASL_SERVER_FACTORY_PREFIX + saslServerBuilderEntry.getKey(),
                         saslServerBuilderEntry.getValue().getServerFactoryClass().getName());
             } else {
-                log.warn("Cannot find server factory for security mechanism : " + saslServerBuilderEntry.getKey()
-                        + ". This may be already supported by Java Security Provider.");
+                log.warn("Broker cannot find server factory for security mechanism : " + saslServerBuilderEntry
+                        .getKey());
             }
         }
     }

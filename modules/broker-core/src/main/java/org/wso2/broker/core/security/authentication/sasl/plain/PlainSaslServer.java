@@ -20,9 +20,11 @@ package org.wso2.broker.core.security.authentication.sasl.plain;
 
 import org.wso2.broker.core.security.authentication.Authenticator;
 import org.wso2.broker.core.security.authentication.jaas.BrokerCallbackHandler;
+import org.wso2.broker.core.security.authentication.util.BrokerSecurityConstants;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.LoginException;
 import javax.security.sasl.SaslException;
@@ -45,11 +47,11 @@ public class PlainSaslServer implements SaslServer {
 
     private String authenticationId;
 
-    private Authenticator authenticator;
+    private Map<String, ?> properties;
 
-    public PlainSaslServer(CallbackHandler callbackHandler, Authenticator authenticator) {
+    public PlainSaslServer(CallbackHandler callbackHandler, Map<String, ?> properties) {
         this.callbackHandler = callbackHandler;
-        this.authenticator = authenticator;
+        this.properties = properties;
     }
 
     @Override
@@ -75,6 +77,8 @@ public class PlainSaslServer implements SaslServer {
             ((BrokerCallbackHandler) callbackHandler).setUsername(authcid);
             ((BrokerCallbackHandler) callbackHandler).setPassword(password.toCharArray());
             try {
+                Authenticator authenticator = (Authenticator) properties
+                        .get(BrokerSecurityConstants.AUTHENTICATOR_PROPERTY);
                 isComplete = authenticator.authenticate(callbackHandler);
                 authenticationId = authcid;
                 return new byte[0];

@@ -26,7 +26,7 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.sasl.SaslServerFactory;
 
 /**
- * Class implements {@link SaslServerBuilder}  will manage the custom SASL provider mechanisms
+ * Class implements {@link SaslServerBuilder} to build the PLAIN SASL provider mechanism
  */
 public class PlainSaslServerBuilder implements SaslServerBuilder {
 
