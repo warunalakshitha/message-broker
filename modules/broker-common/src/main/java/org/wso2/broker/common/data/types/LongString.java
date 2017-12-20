@@ -98,7 +98,8 @@ public class LongString implements EncodableData {
         return new String(content, StandardCharsets.UTF_8);
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public byte[] getBytes() {
-        return content.clone();
+        return content;
     }
 }

@@ -34,12 +34,12 @@ import javax.naming.InitialContext;
  */
 public class AuthenticationTest {
 
-    @Parameters({ "broker-port" })
+    @Parameters({ "broker-port", "admin-username", "admin-password" })
     @Test
-    public void testValidClientConnection(String port) throws Exception {
+    public void testValidClientConnection(String port, String adminUsername, String adminPassword) throws Exception {
         String topicName = "MyTopic1";
-        InitialContext initialContext = ClientHelper.getInitialContextBuilder("admin", "admin", "localhost", port)
-                .withTopic(topicName).build();
+        InitialContext initialContext = ClientHelper
+                .getInitialContextBuilder(adminUsername, adminPassword, "localhost", port).withTopic(topicName).build();
         TopicConnectionFactory connectionFactory = (TopicConnectionFactory) initialContext
                 .lookup(ClientHelper.CONNECTION_FACTORY);
         TopicConnection connection = connectionFactory.createTopicConnection();
@@ -47,12 +47,13 @@ public class AuthenticationTest {
         connection.close();
     }
 
-    @Parameters({ "broker-port" })
+    @Parameters({ "broker-port", "admin-username" })
     @Test
-    public void testInvalidClientConnection(String port) throws Exception {
+    public void testInvalidClientConnection(String port, String adminUsername) throws Exception {
         String topicName = "MyTopic1";
         InitialContext initialContext = ClientHelper
-                .getInitialContextBuilder("admin", "invalidPassword", "localhost", port).withTopic(topicName).build();
+                .getInitialContextBuilder(adminUsername, "invalidPassword", "localhost", port).withTopic(topicName)
+                .build();
         TopicConnectionFactory connectionFactory = (TopicConnectionFactory) initialContext
                 .lookup(ClientHelper.CONNECTION_FACTORY);
         Assert.assertThrows(JMSException.class, connectionFactory::createTopicConnection);

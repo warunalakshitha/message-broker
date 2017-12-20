@@ -13,7 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-package org.wso2.broker.core.security.user;
+package org.wso2.broker.core.security.authentication.user;
 
 import java.util.ArrayList;
 import java.util.List;

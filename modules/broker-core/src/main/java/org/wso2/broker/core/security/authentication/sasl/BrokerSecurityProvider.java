@@ -28,7 +28,7 @@ import java.util.Map;
 /**
  * {@link Provider} implementation for register AMQ SASL server factories in Java Security .
  */
-public class SaslSecurityProvider extends Provider {
+public class BrokerSecurityProvider extends Provider {
 
     private static final Logger log = LoggerFactory.getLogger(SaslServerBuilder.class);
     private static final long serialVersionUID = -1576616958900657930L;
@@ -39,7 +39,7 @@ public class SaslSecurityProvider extends Provider {
      * @param name        the provider name.
      * @param providerMap map of SASLServerProviders
      */
-    public SaslSecurityProvider(String name, Map<String, SaslServerBuilder> providerMap) {
+    public BrokerSecurityProvider(String name, Map<String, SaslServerBuilder> providerMap) {
         super(name, BrokerSecurityConstants.JCA_PROVIDER_VERSION, BrokerSecurityConstants.JCA_PROVIDER_INFO);
         register(providerMap);
     }

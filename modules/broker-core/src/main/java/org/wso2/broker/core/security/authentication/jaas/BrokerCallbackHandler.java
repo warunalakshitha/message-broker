@@ -16,7 +16,9 @@
  *   under the License.
  *
  */
-package org.wso2.broker.core.security.jaas;
+package org.wso2.broker.core.security.authentication.jaas;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import javax.security.auth.callback.Callback;
@@ -65,7 +67,8 @@ public class BrokerCallbackHandler implements CallbackHandler {
         this.username = username;
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setPassword(char[] password) {
-        this.password = password.clone();
+        this.password = password;
     }
 }

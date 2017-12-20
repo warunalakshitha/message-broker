@@ -28,20 +28,30 @@ public class BrokerConfiguration {
      * Name of the configuration file.
      */
     public static final String BROKER_FILE_NAME = "broker.yaml";
-    
+
     /**
      * system property to specify the path of the broker configuration file.
      */
     public static final String SYSTEM_PARAM_BROKER_CONFIG_FILE = "broker.config";
-    
+
     DatasourceConfiguration datasource;
-    
+
+    AuthenticationConfiguration authenticator;
+
     public DatasourceConfiguration getDatasource() {
         return datasource;
     }
 
     public void setDatasource(DatasourceConfiguration datasource) {
         this.datasource = datasource;
+    }
+
+    public AuthenticationConfiguration getAuthenticator() {
+        return authenticator;
+    }
+
+    public void setAuthenticator(AuthenticationConfiguration authenticator) {
+        this.authenticator = authenticator;
     }
 
     /**
@@ -95,6 +105,22 @@ public class BrokerConfiguration {
                     + ", password=" + password + "]";
         }
 
+    }
+
+    /**
+     * Represents a authentication configuration for broker ( e.g. database)
+     */
+    public static class AuthenticationConfiguration {
+
+        private String className;
+
+        public String getClassName() {
+            return className;
+        }
+
+        public void setClassName(String className) {
+            this.className = className;
+        }
     }
 
 }

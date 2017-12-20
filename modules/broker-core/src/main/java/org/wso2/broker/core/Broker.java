@@ -23,7 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wso2.broker.common.data.types.FieldTable;
 import org.wso2.broker.core.configuration.BrokerConfiguration;
-import org.wso2.broker.core.security.AuthenticationManager;
+import org.wso2.broker.core.security.authentication.AuthenticationManager;
 
 /**
  * Broker API class.
@@ -41,7 +41,7 @@ public final class Broker {
     public Broker(BrokerConfiguration configuration) {
         this.messagingEngine = new MessagingEngine(configuration);
         this.brokerConfiguration = configuration;
-        this.authenticationManager = new AuthenticationManager();
+        this.authenticationManager = new AuthenticationManager(configuration.getAuthenticator().getClassName());
     }
 
     public BrokerConfiguration getBrokerConfiguration() {
@@ -81,8 +81,8 @@ public final class Broker {
         messagingEngine.closeConsumer(consumer);
     }
 
-    public void createExchange(String exchangeName, String type,
-                               boolean passive, boolean durable) throws BrokerException {
+    public void createExchange(String exchangeName, String type, boolean passive, boolean durable)
+            throws BrokerException {
         messagingEngine.createExchange(exchangeName, type, passive, durable);
     }
 
@@ -90,8 +90,8 @@ public final class Broker {
         messagingEngine.deleteExchange(exchangeName, type, ifUnused);
     }
 
-    public void createQueue(String destination, boolean passive,
-                            boolean durable, boolean autoDelete) throws BrokerException {
+    public void createQueue(String destination, boolean passive, boolean durable, boolean autoDelete)
+            throws BrokerException {
         messagingEngine.createQueue(destination, passive, durable, autoDelete);
     }
 
@@ -99,8 +99,8 @@ public final class Broker {
         messagingEngine.deleteQueue(queueName, ifUnused, ifEmpty);
     }
 
-    public void bind(String queueName, String exchangeName,
-                     String routingKey, FieldTable arguments) throws BrokerException {
+    public void bind(String queueName, String exchangeName, String routingKey, FieldTable arguments)
+            throws BrokerException {
         messagingEngine.bind(queueName, exchangeName, routingKey, arguments);
     }
 

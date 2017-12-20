@@ -16,12 +16,12 @@
  *   under the License.
  *
  */
-package org.wso2.broker.core.security.jaas;
+package org.wso2.broker.core.security.authentication.jaas;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wso2.broker.core.security.exception.BrokerAuthenticationException;
-import org.wso2.broker.core.security.user.UserStoreManager;
+import org.wso2.broker.core.security.authentication.exception.BrokerAuthenticationException;
+import org.wso2.broker.core.security.authentication.user.UserStoreManager;
 
 import java.io.IOException;
 import java.util.Map;

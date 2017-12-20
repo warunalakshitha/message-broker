@@ -19,7 +19,6 @@
 
 package org.wso2.broker.amqp.codec.frames;
 
-import com.google.common.base.Charsets;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
@@ -30,7 +29,7 @@ import org.wso2.broker.common.data.types.FieldTable;
 import org.wso2.broker.common.data.types.LongString;
 import org.wso2.broker.common.data.types.ShortString;
 import org.wso2.broker.core.Broker;
-import org.wso2.broker.core.security.sasl.SaslServerBuilder;
+import org.wso2.broker.core.security.authentication.sasl.SaslServerBuilder;
 
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
@@ -73,13 +72,11 @@ public class ConnectionStartOk extends MethodFrame {
 
     @Override
     public void handle(ChannelHandlerContext ctx, AmqpConnectionHandler connectionHandler) {
-        if (mechanisms == null || authenticate(connectionHandler)) {
+        if (authenticate(connectionHandler)) {
             ctx.writeAndFlush(new ConnectionTune(256, 65535, 0));
         } else {
             String replyText = "Authentication Failed";
-            ctx.writeAndFlush(
-                    new ConnectionClose(403, new ShortString(replyText.length(), replyText.getBytes(Charsets.UTF_8)),
-                            CLASS_ID, METHOD_ID));
+            ctx.writeAndFlush(new ConnectionClose(403, ShortString.parseString(replyText), CLASS_ID, METHOD_ID));
         }
     }
 

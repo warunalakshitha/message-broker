@@ -28,17 +28,15 @@ public class ClientHelper {
     /**
      * Full qualified class name of the andes initial context factory
      */
-    public static final String ANDES_INITIAL_CONTEXT_FACTORY = "org.wso2.andes.jndi" +
-            ".PropertiesFileInitialContextFactory";
+    public static final String ANDES_INITIAL_CONTEXT_FACTORY =
+            "org.wso2.andes.jndi" + ".PropertiesFileInitialContextFactory";
 
     /**
      * Queue connection factory name used
      */
     public static final String CONNECTION_FACTORY = "ConnectionFactory";
 
-    public static InitialContextBuilder getInitialContextBuilder(String username,
-            String password,
-            String brokerHost,
+    public static InitialContextBuilder getInitialContextBuilder(String username, String password, String brokerHost,
             String port) {
         return new InitialContextBuilder(username, password, brokerHost, port);
     }
@@ -78,10 +76,9 @@ public class ClientHelper {
      * @param port       Port (E.g. 5672)
      * @return Broker Connection String
      */
-    private static String getBrokerConnectionString(String userName, String password,
-                                                    String brokerHost, String port) {
+    private static String getBrokerConnectionString(String userName, String password, String brokerHost, String port) {
 
-        return "amqp://" + userName + ":" + password + "@clientID/carbon?brokerlist='tcp://"
-                + brokerHost + ":" + port + "'";
+        return "amqp://" + userName + ":" + password + "@clientID/carbon?brokerlist='tcp://" + brokerHost + ":" + port
+                + "'";
     }
 }

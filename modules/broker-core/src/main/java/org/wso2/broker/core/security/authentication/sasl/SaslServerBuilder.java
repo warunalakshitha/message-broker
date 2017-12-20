@@ -16,7 +16,7 @@
  *   under the License.
  *
  */
-package org.wso2.broker.core.security.sasl;
+package org.wso2.broker.core.security.authentication.sasl;
 
 import java.util.Map;
 import javax.security.auth.callback.CallbackHandler;

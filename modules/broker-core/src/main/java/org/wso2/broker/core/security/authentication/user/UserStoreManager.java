@@ -16,16 +16,12 @@
  *   under the License.
  *
  */
-package org.wso2.broker.core.security.user;
+package org.wso2.broker.core.security.authentication.user;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wso2.broker.core.security.exception.BrokerAuthenticationException;
+import org.wso2.broker.core.security.authentication.exception.BrokerAuthenticationException;
 
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -67,8 +63,7 @@ public class UserStoreManager {
             throw new BrokerAuthenticationException(
                     "User not found for userName: " + userName + ". Authentication failed.");
         } else {
-            byte[] plainUserPassword = user.getPassword().getBytes(StandardCharsets.UTF_8);
-            if (Arrays.equals(plainUserPassword, toBytes(password))) {
+            if (user.getPassword() != null && user.getPassword().equals(String.copyValueOf(password))) {
                 return true;
             } else {
                 throw new BrokerAuthenticationException(
@@ -76,25 +71,5 @@ public class UserStoreManager {
                                 + ". Authentication failed.");
             }
         }
-    }
-
-    /**
-     * Convert given char array to bytes
-     *
-     * @param chars char array
-     * @return bytes
-     * @throws BrokerAuthenticationException
-     */
-    private static byte[] toBytes(char[] chars) throws BrokerAuthenticationException {
-        CharBuffer charBuffer = CharBuffer.wrap(chars);
-        ByteBuffer byteBuffer = StandardCharsets.UTF_8.encode(charBuffer);
-        if (!byteBuffer.hasArray()) {
-            throw new BrokerAuthenticationException(
-                    "The password check failed due to inability to obtain byte[] from a ByteBuffer");
-        }
-        byte[] bytes = Arrays.copyOfRange(byteBuffer.array(), byteBuffer.position(), byteBuffer.limit());
-        Arrays.fill(charBuffer.array(), '\u0000'); // clear sensitive data
-        Arrays.fill(byteBuffer.array(), (byte) 0); // clear sensitive data
-        return bytes;
     }
 }

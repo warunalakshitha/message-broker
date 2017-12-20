@@ -16,16 +16,18 @@
  *   under the License.
  *
  */
-package org.wso2.broker.core.security;
+package org.wso2.broker.core.security.authentication;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wso2.broker.core.security.sasl.SaslSecurityProvider;
-import org.wso2.broker.core.security.sasl.SaslServerBuilder;
-import org.wso2.broker.core.security.sasl.plain.PlainSaslServerBuilder;
-import org.wso2.broker.core.security.util.BrokerSecurityConstants;
+import org.wso2.broker.core.security.authentication.jaas.JaasAuthenticator;
+import org.wso2.broker.core.security.authentication.sasl.BrokerSecurityProvider;
+import org.wso2.broker.core.security.authentication.sasl.SaslServerBuilder;
+import org.wso2.broker.core.security.authentication.sasl.plain.PlainSaslServerBuilder;
+import org.wso2.broker.core.security.authentication.util.BrokerSecurityConstants;
 
 import java.security.Security;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -41,11 +43,24 @@ public class AuthenticationManager {
      * Map of SASL Server mechanisms
      */
     private Map<String, SaslServerBuilder> saslMechanisms = new ConcurrentHashMap<>();
+    /**
+     * Authenticator for broker
+     */
+    private Authenticator authenticator;
 
     /**
      * Constructor which will initialize authentication manager
      */
-    public AuthenticationManager() {
+    public AuthenticationManager(String authenticatorClassName) {
+
+        try {
+            Class<?> aClass = Class.forName(authenticatorClassName);
+            authenticator = (Authenticator) aClass.newInstance();
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+            authenticator = new JaasAuthenticator();
+            log.error("Default authenticator will be used since given authenticator class: " + authenticatorClassName
+                    + " cannot be loaded due to error.", e);
+        }
         registerSASLServers();
     }
 
@@ -54,11 +69,13 @@ public class AuthenticationManager {
      */
     private void registerSASLServers() {
         // create PLAIN SaslServer builder
-        PlainSaslServerBuilder plainSaslServerBuilder = new PlainSaslServerBuilder();
+        Map<String, Object> properties = new HashMap<>();
+        properties.put(BrokerSecurityConstants.AUTHENTICATOR_PROPERTY, authenticator);
+        PlainSaslServerBuilder plainSaslServerBuilder = new PlainSaslServerBuilder(properties);
         saslMechanisms.put(plainSaslServerBuilder.getMechanismName(), plainSaslServerBuilder);
         // Register given Sasl Server factories
-        if (Security.insertProviderAt(new SaslSecurityProvider(BrokerSecurityConstants.PROVIDER_NAME, saslMechanisms)
-                , 1)
+        if (Security
+                .insertProviderAt(new BrokerSecurityProvider(BrokerSecurityConstants.PROVIDER_NAME, saslMechanisms), 1)
                 == -1) {
             log.error("Unable to load AMQ security authentication providers.");
         } else {
@@ -75,5 +92,13 @@ public class AuthenticationManager {
      */
     public Map<String, SaslServerBuilder> getSaslMechanisms() {
         return saslMechanisms;
+    }
+
+    public Authenticator getAuthenticator() {
+        return authenticator;
+    }
+
+    public void setAuthenticator(Authenticator authenticator) {
+        this.authenticator = authenticator;
     }
 }

@@ -29,9 +29,9 @@ import org.wso2.broker.amqp.AmqpServerConfiguration;
 import org.wso2.broker.amqp.Server;
 import org.wso2.broker.core.Broker;
 import org.wso2.broker.core.configuration.BrokerConfiguration;
-import org.wso2.broker.core.security.user.User;
-import org.wso2.broker.core.security.user.UserStoreManager;
-import org.wso2.broker.core.security.util.BrokerSecurityConstants;
+import org.wso2.broker.core.security.authentication.user.User;
+import org.wso2.broker.core.security.authentication.user.UserStoreManager;
+import org.wso2.broker.core.security.authentication.util.BrokerSecurityConstants;
 
 import java.io.File;
 
@@ -44,12 +44,16 @@ public class SuiteInitializer {
     private Broker broker;
     private Server server;
 
-
-    @Parameters({"broker-port", "broker-hostname"})
+    @Parameters({ "broker-port", "broker-hostname", "admin-username", "admin-password" })
     @BeforeSuite
-    public void beforeSuite(String port, String hostname, ITestContext context) throws Exception {
+    public void beforeSuite(String port, String hostname, String adminUsername, String adminPassword,
+            ITestContext context) throws Exception {
         LOGGER.info("Starting broker on " + port + " for suite " + context.getSuite().getName());
         BrokerConfiguration configuration = new BrokerConfiguration();
+        BrokerConfiguration.AuthenticationConfiguration authenticationConfiguration = new BrokerConfiguration
+                .AuthenticationConfiguration();
+        authenticationConfiguration.setClassName("org.wso2.broker.core.security.authentication.jaas.JaasAuthenticator");
+        configuration.setAuthenticator(authenticationConfiguration);
         AmqpServerConfiguration serverConfiguration = new AmqpServerConfiguration();
         serverConfiguration.getNonSecure().setPort(port);
         serverConfiguration.getNonSecure().setHostName(hostname);
@@ -67,8 +71,8 @@ public class SuiteInitializer {
 
         //add test user
         User testUser = new User();
-        testUser.setUsername("admin");
-        testUser.setPassword("admin");
+        testUser.setUsername(adminUsername);
+        testUser.setPassword(adminPassword);
         UserStoreManager.addUser(testUser);
     }
 

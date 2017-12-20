@@ -16,7 +16,7 @@
  *   under the License.
  *
  */
-package org.wso2.broker.core.security.exception;
+package org.wso2.broker.core.security.authentication.exception;
 
 import javax.security.auth.login.LoginException;
 

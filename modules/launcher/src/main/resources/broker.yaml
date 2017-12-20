@@ -21,6 +21,9 @@ broker:
   user: root
   password: root
 
+ authenticator:
+  className: org.wso2.broker.core.security.authentication.jaas.JaasAuthenticator
+
 transport.amqp:
  nonSecure:
   hostName: localhost

@@ -16,7 +16,7 @@
  *   under the License.
  *
  */
-package org.wso2.broker.core.security.util;
+package org.wso2.broker.core.security.authentication.util;
 
 /**
  * Constants related to broker security
@@ -31,7 +31,7 @@ public class BrokerSecurityConstants {
     public static final double JCA_PROVIDER_VERSION = 1.0;
     // The name for the amq Java Cryptography Architecture (JCA) provider. This will be used to register Sasl servers
     public static final String PROVIDER_NAME = "AMQSASLProvider";
-
+    public static final String AUTHENTICATOR_PROPERTY = "Authenticator";
     /*
     JaaS Login Module related constants
      */
