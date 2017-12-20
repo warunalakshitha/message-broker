@@ -79,7 +79,7 @@ public class ClientHelper {
      * @return Broker Connection String
      */
     private static String getBrokerConnectionString(String userName, String password,
-            String brokerHost, String port) {
+                                                    String brokerHost, String port) {
 
         return "amqp://" + userName + ":" + password + "@clientID/carbon?brokerlist='tcp://"
                 + brokerHost + ":" + port + "'";
