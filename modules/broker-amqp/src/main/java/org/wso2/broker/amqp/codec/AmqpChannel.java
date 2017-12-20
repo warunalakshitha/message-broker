@@ -20,6 +20,9 @@
 package org.wso2.broker.amqp.codec;
 
 import io.netty.channel.ChannelHandlerContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.wso2.broker.amqp.AckData;
 import org.wso2.broker.amqp.AmqpConsumer;
 import org.wso2.broker.amqp.AmqpException;
 import org.wso2.broker.common.data.types.FieldTable;
@@ -31,12 +34,15 @@ import org.wso2.broker.core.Consumer;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * AMQP channel representation.
  */
 public class AmqpChannel {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AmqpChannel.class);
 
     private final Broker broker;
 
@@ -45,6 +51,23 @@ public class AmqpChannel {
     private final Map<ShortString, AmqpConsumer> consumerMap;
 
     private final InMemoryMessageAggregator messageAggregator;
+
+    /**
+     * This tag is unique per subscription to a queue. The server returns this in response
+     * to a basic.consume request.
+     */
+    private AtomicInteger consumerTagGenerator = new AtomicInteger(0);
+
+    /**
+     * The delivery tag is unique per channel. This is pre-incremented before putting into the deliver frame so that
+     * value of this represents the <b>last</b> tag sent out
+     */
+    private AtomicLong deliveryTagGenerator = new AtomicLong(0);
+
+    /**
+     * Used to get the ack data matching to a delivery id.
+     */
+    private Map<Long, AckData> unackedMessageMap = new HashMap<>();
 
     AmqpChannel(Broker broker, int channelId) {
         this.broker = broker;
@@ -72,9 +95,9 @@ public class AmqpChannel {
                                ChannelHandlerContext ctx) throws BrokerException {
         String tag = consumerTag.toString();
         if (tag.isEmpty()) {
-            tag = UUID.randomUUID().toString();
+            tag = "sgen" + getNextConsumerTag();
         }
-        AmqpConsumer amqpConsumer = new AmqpConsumer(ctx, channelId, queueName.toString(), tag, exclusive);
+        AmqpConsumer amqpConsumer = new AmqpConsumer(ctx, this, queueName.toString(), tag, exclusive);
         consumerMap.put(consumerTag, amqpConsumer);
         broker.addConsumer(amqpConsumer);
         return new ShortString(tag.length(), tag.getBytes(StandardCharsets.UTF_8));
@@ -97,5 +120,47 @@ public class AmqpChannel {
 
     public InMemoryMessageAggregator getMessageAggregator() {
         return messageAggregator;
+    }
+
+    public void acknowledge(long deliveryTag, boolean multiple) {
+        //TODO handle multiple
+        AckData ackData = unackedMessageMap.remove(deliveryTag);
+        if (ackData != null) {
+            broker.acknowledge(ackData.getQueueName(), ackData.getMessage().getMetadata().getInternalId());
+        } else {
+            LOGGER.warn("Could not find a matching ack data for acking the delivery tag " + deliveryTag);
+        }
+    }
+
+    public int getNextConsumerTag() {
+        return consumerTagGenerator.incrementAndGet();
+    }
+
+    public long getNextDeliveryTag() {
+        return deliveryTagGenerator.incrementAndGet();
+    }
+
+    /**
+     * Getter for channelId
+     */
+    public int getChannelId() {
+        return channelId;
+    }
+
+    public void recordMessageDelivery(long deliveryTag, AckData ackData) {
+        unackedMessageMap.put(deliveryTag, ackData);
+    }
+
+    public void reject(long deliveryTag, boolean requeue) {
+        AckData ackData = unackedMessageMap.remove(deliveryTag);
+        if (ackData != null) {
+            if (requeue) {
+                broker.requeue(ackData.getQueueName(), ackData.getMessage().getMetadata().getInternalId());
+            } else {
+                LOGGER.debug("Dropping message for delivery tag {}", deliveryTag);
+            }
+        } else {
+            LOGGER.warn("Could not find a matching ack data for rejecting the delivery tag " + deliveryTag);
+        }
     }
 }
