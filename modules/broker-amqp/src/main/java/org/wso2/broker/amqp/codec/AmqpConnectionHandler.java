@@ -23,6 +23,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wso2.broker.amqp.AmqpServerConfiguration;
 import org.wso2.broker.amqp.codec.frames.AmqpBadMessage;
 import org.wso2.broker.amqp.codec.frames.ConnectionStart;
 import org.wso2.broker.amqp.codec.frames.GeneralFrame;
@@ -40,11 +41,11 @@ public class AmqpConnectionHandler extends ChannelInboundHandlerAdapter {
     private static final Logger LOGGER = LoggerFactory.getLogger(AmqpConnectionHandler.class);
     private final Map<Integer, AmqpChannel> channels = new HashMap<>();
     private final Broker broker;
-    private final String hostName;
+    private final AmqpServerConfiguration configuration;
 
-    public AmqpConnectionHandler(Broker broker, String hostname) {
+    public AmqpConnectionHandler(Broker broker, AmqpServerConfiguration configuration) {
         this.broker = broker;
-        this.hostName = hostname;
+        this.configuration = configuration;
     }
 
     public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
@@ -126,11 +127,11 @@ public class AmqpConnectionHandler extends ChannelInboundHandlerAdapter {
     }
 
     /**
-     * Returns the hostname of the server for the amq connection
+     * Returns the configuration of the server for the amq connection
      *
-     * @return Hostname broker
+     * @return AmqpServerConfiguration
      */
-    public String getHostName() {
-        return hostName;
+    public AmqpServerConfiguration getConfiguration() {
+        return configuration;
     }
 }

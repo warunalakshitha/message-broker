@@ -32,6 +32,7 @@ import org.wso2.broker.core.configuration.BrokerConfiguration;
 import org.wso2.broker.core.security.authentication.user.User;
 import org.wso2.broker.core.security.authentication.user.UserStoreManager;
 import org.wso2.broker.core.security.authentication.util.BrokerSecurityConstants;
+import org.wso2.messaging.integration.util.TestConstants;
 
 import java.io.File;
 
@@ -44,9 +45,9 @@ public class SuiteInitializer {
     private Broker broker;
     private Server server;
 
-    @Parameters({ "broker-port", "broker-hostname", "admin-username", "admin-password" })
+    @Parameters({ "broker-port", "broker-ssl-port", "broker-hostname", "admin-username", "admin-password" })
     @BeforeSuite
-    public void beforeSuite(String port, String hostname, String adminUsername, String adminPassword,
+    public void beforeSuite(String port, String sslPort, String hostname, String adminUsername, String adminPassword,
             ITestContext context) throws Exception {
         LOGGER.info("Starting broker on " + port + " for suite " + context.getSuite().getName());
         BrokerConfiguration configuration = new BrokerConfiguration();
@@ -55,8 +56,16 @@ public class SuiteInitializer {
         authenticationConfiguration.setClassName("org.wso2.broker.core.security.authentication.jaas.JaasAuthenticator");
         configuration.setAuthenticator(authenticationConfiguration);
         AmqpServerConfiguration serverConfiguration = new AmqpServerConfiguration();
-        serverConfiguration.getNonSecure().setPort(port);
-        serverConfiguration.getNonSecure().setHostName(hostname);
+        serverConfiguration.getPlain().setPort(port);
+        serverConfiguration.getPlain().setHostName(hostname);
+
+        serverConfiguration.getSsl().setEnabled(true);
+        serverConfiguration.getSsl().setHostName(hostname);
+        serverConfiguration.getSsl().setPort(sslPort);
+        serverConfiguration.getSsl().getKeyStore().setLocation(TestConstants.KEYSTORE_LOCATION);
+        serverConfiguration.getSsl().getKeyStore().setPassword(TestConstants.KEYSTORE_PASSWORD);
+        serverConfiguration.getSsl().getTrustStore().setLocation(TestConstants.TRUST_STORE_LOCATION);
+        serverConfiguration.getSsl().getTrustStore().setPassword(TestConstants.TRUST_STORE_PASSWORD);
 
         broker = new Broker(configuration);
         broker.startMessageDelivery();

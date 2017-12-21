@@ -80,7 +80,7 @@ public class BrokerLoginModule implements LoginModule {
      * @param password Password
      * @return Whether user authentication success ot not
      */
-    private boolean validateUserPassword(String userName, char[] password) throws BrokerAuthenticationException {
+    private boolean validateUserPassword(String userName, char... password) throws BrokerAuthenticationException {
         return userName != null && password != null && UserStoreManager.authenticate(userName, password);
     }
 

@@ -103,8 +103,8 @@ public class ConnectionStartOk extends MethodFrame {
         try {
             if (saslServerBuilder != null) {
                 saslServer = Sasl.createSaslServer(mechanisms.toString(), AmqConstant.AMQP_PROTOCOL_IDENTIFIER,
-                        connectionHandler.getHostName(), saslServerBuilder.getProperties(),
-                        saslServerBuilder.getCallbackHandler());
+                        connectionHandler.getConfiguration().getPlain().getHostName(),
+                        saslServerBuilder.getProperties(), saslServerBuilder.getCallbackHandler());
             } else {
                 throw new SaslException("Server does not support for mechanism: " + mechanisms);
             }
