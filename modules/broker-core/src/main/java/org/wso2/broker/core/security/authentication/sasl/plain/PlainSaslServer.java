@@ -45,13 +45,15 @@ public class PlainSaslServer implements SaslServer {
 
     public static final String DEFAULT_JAAS_LOGIN_MODULE = "CarbonSecurityConfig";
 
+    public static final String PLAIN_MECHANISM = "PLAIN";
+
     public PlainSaslServer(UsernamePasswordCallbackHandler callbackHandler) {
         this.callbackHandler = callbackHandler;
     }
 
     @Override
     public String getMechanismName() {
-        return PlainSaslServerBuilder.MECHANISM;
+        return PLAIN_MECHANISM;
     }
 
     @Override
@@ -78,7 +80,7 @@ public class PlainSaslServer implements SaslServer {
                     throw new SaslException("Error while authenticate user with login module ", e);
                 }
             } else {
-                throw new SaslException("Invalid username: " + authcid + " and password: " + password + " received.");
+                throw new SaslException("Invalid username or password received.");
             }
         } catch (IOException e) {
             throw new SaslException("Error processing data: " + e, e);

@@ -55,7 +55,6 @@ public class ConnectionSecureOk extends MethodFrame {
 
     @Override
     public void handle(ChannelHandlerContext ctx, AmqpConnectionHandler connectionHandler) {
-
         try {
             SaslServer saslServer = connectionHandler.getSaslServer();
             if (saslServer != null) {
@@ -75,7 +74,6 @@ public class ConnectionSecureOk extends MethodFrame {
             String replyText = "Authentication Failed";
             ctx.writeAndFlush(new ConnectionClose(403, ShortString.parseString(replyText), 10, 21));
         }
-
     }
 
     public static AmqMethodBodyFactory getFactory() {

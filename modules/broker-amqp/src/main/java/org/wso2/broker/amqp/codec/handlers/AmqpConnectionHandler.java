@@ -64,7 +64,6 @@ public class AmqpConnectionHandler extends ChannelInboundHandlerAdapter {
             handleProtocolInit(ctx, (ProtocolInitFrame) msg);
         } else if (msg instanceof GeneralFrame) {
             ((GeneralFrame) msg).handle(ctx, this);
-
         } else if (msg instanceof AmqpBadMessage) {
             LOGGER.warn("Bad message received", ((AmqpBadMessage) msg).getCause());
             // TODO need to send error back to client
@@ -115,14 +114,6 @@ public class AmqpConnectionHandler extends ChannelInboundHandlerAdapter {
         return channels.get(channelId);
     }
 
-    public void setSaslServer(SaslServer saslServer) {
-        this.saslServer = saslServer;
-    }
-
-    public SaslServer getSaslServer() {
-        return saslServer;
-    }
-
     public void closeChannel(int channel) {
         channels.remove(channel);
     }
@@ -149,4 +140,22 @@ public class AmqpConnectionHandler extends ChannelInboundHandlerAdapter {
     public AmqpServerConfiguration getConfiguration() {
         return configuration;
     }
+
+    /**
+     * Method to set {@link SaslServer} to handler
+     *
+     */
+    public void setSaslServer(SaslServer saslServer) {
+        this.saslServer = saslServer;
+    }
+
+    /**
+     * Returns the {@link SaslServer} for authenticate client connection
+     *
+     * @return SaslServer
+     */
+    public SaslServer getSaslServer() {
+        return saslServer;
+    }
+
 }

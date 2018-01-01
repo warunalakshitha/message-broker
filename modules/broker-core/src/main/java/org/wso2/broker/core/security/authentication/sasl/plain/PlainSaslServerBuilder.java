@@ -29,10 +29,8 @@ import javax.security.sasl.SaslServerFactory;
  */
 public class PlainSaslServerBuilder implements SaslServerBuilder {
 
-    static final String MECHANISM = "PLAIN";
-
     public String getMechanismName() {
-        return MECHANISM;
+        return PlainSaslServer.PLAIN_MECHANISM;
     }
 
     @Override

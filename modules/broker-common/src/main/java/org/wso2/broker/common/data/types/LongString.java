@@ -27,7 +27,6 @@ import java.util.Arrays;
 
 /**
  * AMQP Long String.
- * <p>
  * long-string = long-uint *OCTET ; length + content
  */
 public class LongString implements EncodableData {

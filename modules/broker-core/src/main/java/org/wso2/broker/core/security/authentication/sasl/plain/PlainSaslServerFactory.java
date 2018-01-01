@@ -20,6 +20,7 @@ package org.wso2.broker.core.security.authentication.sasl.plain;
 
 import java.util.Map;
 import javax.security.auth.callback.CallbackHandler;
+import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import javax.security.sasl.SaslServerFactory;
@@ -35,16 +36,21 @@ public class PlainSaslServerFactory implements SaslServerFactory {
             CallbackHandler cbh) throws SaslException {
         if (!(cbh instanceof UsernamePasswordCallbackHandler)) {
             throw new SaslException(
-                    "CallbackHandler must be of type of UsernamePasswordCallbackHandler, but given " + "handler is : "
-                            + cbh.getClass());
+                    "CallbackHandler must be of type of UsernamePasswordCallbackHandler, but received  : " + cbh
+                            .getClass());
         }
-        return (PlainSaslServerBuilder.MECHANISM.equals(mechanism)) ?
+        return (PlainSaslServer.PLAIN_MECHANISM.equals(mechanism)) ?
                 new PlainSaslServer((UsernamePasswordCallbackHandler) cbh) :
                 null;
     }
 
     @Override
     public String[] getMechanismNames(Map<String, ?> props) {
-        return new String[] { "PLAIN" };
+        if (props != null && "true".equals(props.get(Sasl.POLICY_NOPLAINTEXT))) {
+            return new String[] {};
+        } else {
+            return new String[] { PlainSaslServer.PLAIN_MECHANISM };
+        }
     }
 }
+

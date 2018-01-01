@@ -48,7 +48,7 @@ public class BrokerSecurityProvider extends Provider {
     /**
      * Register given Sasl server factory list
      *
-     * @param providerMap Map of sasl server builder
+     * @param providerMap Map of sasl server builders
      */
     private void register(Map<String, SaslServerBuilder> providerMap) {
 

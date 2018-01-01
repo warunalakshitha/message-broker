@@ -43,13 +43,10 @@ public final class Broker {
         this.brokerConfiguration = configuration;
         this.authenticationManager = new AuthenticationManager(configuration.getAuthenticator());
     }
-
-    public BrokerConfiguration getBrokerConfiguration() {
-        return brokerConfiguration;
-    }
-
-    /*
-    Authentication manager for broker
+    
+    /**
+     * Provides {@link AuthenticationManager} for broker
+     * @return Broker authentication manager
      */
     public AuthenticationManager getAuthenticationManager() {
         return authenticationManager;

@@ -50,7 +50,6 @@ public class AuthenticationManager {
      * mechanisms
      */
     public AuthenticationManager(BrokerConfiguration.AuthenticationConfiguration authenticationConfiguration) {
-
         if (authenticationConfiguration != null) {
             Configuration jaasConfig = createJaasConfig(authenticationConfiguration.getLoginModule(),
                     authenticationConfiguration.getOptions());
@@ -82,7 +81,7 @@ public class AuthenticationManager {
      * create jaas config
      *
      * @param loginModuleClassName Jaas login module class name
-     * @return
+     * @return Configuration
      */
     private static Configuration createJaasConfig(String loginModuleClassName, Map<String, String> options) {
         AppConfigurationEntry[] entries = {

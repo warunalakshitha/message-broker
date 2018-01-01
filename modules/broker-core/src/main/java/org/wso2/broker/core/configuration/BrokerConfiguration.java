@@ -114,9 +114,14 @@ public class BrokerConfiguration {
      * Represents a authentication configuration for broker ( e.g. database)
      */
     public static class AuthenticationConfiguration {
-
+        /**
+         * Jaas login module class name
+         */
         private String loginModule;
 
+        /**
+         * Jaas login module options
+         */
         private Map<String, String> options = new HashMap<>();
 
         public String getLoginModule() {

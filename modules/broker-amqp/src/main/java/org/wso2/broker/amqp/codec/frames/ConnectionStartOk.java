@@ -70,11 +70,10 @@ public class ConnectionStartOk extends MethodFrame {
 
     @Override
     public void handle(ChannelHandlerContext ctx, AmqpConnectionHandler connectionHandler) {
-
         Broker broker = connectionHandler.getBroker();
         SaslServer saslServer;
-        SaslServerBuilder saslServerBuilder = broker.getAuthenticationManager().getSaslMechanisms()
-                .get(mechanisms.toString());
+        SaslServerBuilder saslServerBuilder = broker.getAuthenticationManager().getSaslMechanisms().get(mechanisms
+                .toString());
         try {
             if (saslServerBuilder != null) {
                 saslServer = Sasl.createSaslServer(mechanisms.toString(), AmqConstant.AMQP_PROTOCOL_IDENTIFIER,
