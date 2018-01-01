@@ -32,6 +32,7 @@ import org.wso2.broker.core.Broker;
 
 import java.util.HashMap;
 import java.util.Map;
+import javax.security.sasl.SaslServer;
 
 /**
  * Netty handler for handling an AMQP connection.
@@ -42,6 +43,7 @@ public class AmqpConnectionHandler extends ChannelInboundHandlerAdapter {
     private final Map<Integer, AmqpChannel> channels = new HashMap<>();
     private final Broker broker;
     private final AmqpServerConfiguration configuration;
+    private SaslServer saslServer = null;
 
     public AmqpConnectionHandler(Broker broker, AmqpServerConfiguration configuration) {
         this.broker = broker;
@@ -58,6 +60,7 @@ public class AmqpConnectionHandler extends ChannelInboundHandlerAdapter {
             handleProtocolInit(ctx, (ProtocolInitFrame) msg);
         } else if (msg instanceof GeneralFrame) {
             ((GeneralFrame) msg).handle(ctx, this);
+
         } else if (msg instanceof AmqpBadMessage) {
             LOGGER.warn("Bad message received", ((AmqpBadMessage) msg).getCause());
             // TODO need to send error back to client
@@ -106,6 +109,14 @@ public class AmqpConnectionHandler extends ChannelInboundHandlerAdapter {
      */
     public AmqpChannel getChannel(int channelId) {
         return channels.get(channelId);
+    }
+
+    public void setSaslServer(SaslServer saslServer) {
+        this.saslServer = saslServer;
+    }
+
+    public SaslServer getSaslServer() {
+        return saslServer;
     }
 
     public void closeChannel(int channel) {

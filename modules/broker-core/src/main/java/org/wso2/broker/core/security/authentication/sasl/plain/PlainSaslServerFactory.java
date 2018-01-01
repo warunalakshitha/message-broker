@@ -33,11 +33,18 @@ public class PlainSaslServerFactory implements SaslServerFactory {
     @Override
     public SaslServer createSaslServer(String mechanism, String protocol, String serverName, Map<String, ?> props,
             CallbackHandler cbh) throws SaslException {
-        return (PlainSaslServerBuilder.MECHANISM.equals(mechanism)) ? new PlainSaslServer(cbh, props) : null;
+        if (!(cbh instanceof UsernamePasswordCallbackHandler)) {
+            throw new SaslException(
+                    "CallbackHandler must be of type of UsernamePasswordCallbackHandler, but given " + "handler is : "
+                            + cbh.getClass());
+        }
+        return (PlainSaslServerBuilder.MECHANISM.equals(mechanism)) ?
+                new PlainSaslServer((UsernamePasswordCallbackHandler) cbh) :
+                null;
     }
 
     @Override
     public String[] getMechanismNames(Map<String, ?> props) {
-        return new String[0];
+        return new String[] { "PLAIN" };
     }
 }

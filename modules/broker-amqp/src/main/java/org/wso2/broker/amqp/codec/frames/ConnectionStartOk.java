@@ -45,11 +45,9 @@ public class ConnectionStartOk extends MethodFrame {
     private final ShortString mechanisms;
     private final ShortString locales;
     private final LongString response;
-    private static final short CLASS_ID = 10;
-    private static final short METHOD_ID = 11;
 
-    public ConnectionStartOk(int channel, FieldTable clientProperties, ShortString mechanisms,
-            ShortString locales, LongString response) {
+    public ConnectionStartOk(int channel, FieldTable clientProperties, ShortString mechanisms, ShortString locales,
+            LongString response) {
         super(channel, (short) 10, (short) 11);
         this.clientProperties = clientProperties;
         this.mechanisms = mechanisms;
@@ -72,11 +70,37 @@ public class ConnectionStartOk extends MethodFrame {
 
     @Override
     public void handle(ChannelHandlerContext ctx, AmqpConnectionHandler connectionHandler) {
-        if (authenticate(connectionHandler)) {
-            ctx.writeAndFlush(new ConnectionTune(256, 65535, 0));
-        } else {
+
+        Broker broker = connectionHandler.getBroker();
+        SaslServer saslServer;
+        SaslServerBuilder saslServerBuilder = broker.getAuthenticationManager().getSaslMechanisms()
+                .get(mechanisms.toString());
+        try {
+            if (saslServerBuilder != null) {
+                saslServer = Sasl.createSaslServer(mechanisms.toString(), AmqConstant.AMQP_PROTOCOL_IDENTIFIER,
+                        connectionHandler.getConfiguration().getPlain().getHostName(),
+                        saslServerBuilder.getProperties(), saslServerBuilder.getCallbackHandler());
+                connectionHandler.setSaslServer(saslServer);
+            } else {
+                throw new SaslException("Server does not support for mechanism: " + mechanisms);
+            }
+            if (saslServer != null) {
+                byte[] challenge = saslServer.evaluateResponse(response.getBytes());
+                if (saslServer.isComplete()) {
+                    ctx.writeAndFlush(new ConnectionTune(256, 65535, 0));
+                } else {
+                    ctx.writeAndFlush(new ConnectionSecure(getChannel(), LongString.parse(challenge)));
+                }
+
+            } else {
+                throw new SaslException("Sasl server cannot be found for mechanism: " + mechanisms);
+            }
+        } catch (SaslException e) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Exception occurred while authenticating incoming connection ", e);
+            }
             String replyText = "Authentication Failed";
-            ctx.writeAndFlush(new ConnectionClose(403, ShortString.parseString(replyText), CLASS_ID, METHOD_ID));
+            ctx.writeAndFlush(new ConnectionClose(403, ShortString.parseString(replyText), 10, 11));
         }
     }
 
@@ -88,41 +112,5 @@ public class ConnectionStartOk extends MethodFrame {
             ShortString locale = ShortString.parse(buf);
             return new ConnectionStartOk(channel, clientProperties, mechanisms, locale, response);
         };
-    }
-
-    /**
-     * Method to authenticate incoming connection request on given mechanism
-     * @param connectionHandler Connection Handler
-     * @return Authentication result as success or not
-     */
-    private boolean authenticate(AmqpConnectionHandler connectionHandler) {
-        Broker broker = connectionHandler.getBroker();
-        SaslServer saslServer;
-        SaslServerBuilder saslServerBuilder = broker.getAuthenticationManager().getSaslMechanisms()
-                .get(mechanisms.toString());
-        try {
-            if (saslServerBuilder != null) {
-                saslServer = Sasl.createSaslServer(mechanisms.toString(), AmqConstant.AMQP_PROTOCOL_IDENTIFIER,
-                        connectionHandler.getConfiguration().getPlain().getHostName(),
-                        saslServerBuilder.getProperties(), saslServerBuilder.getCallbackHandler());
-            } else {
-                throw new SaslException("Server does not support for mechanism: " + mechanisms);
-            }
-            if (saslServer != null) {
-                saslServer.evaluateResponse(response.getBytes());
-                if (saslServer.isComplete() && saslServer.getAuthorizationID() != null) {
-                    return true;
-                } else {
-                    throw new SaslException("Authentication Failed");
-                }
-            } else {
-                throw new SaslException("Sasl server cannot be found for mechanism: " + mechanisms);
-            }
-        } catch (SaslException e) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Exception occurred while authenticating incoming connection ", e);
-            }
-        }
-        return false;
     }
 }

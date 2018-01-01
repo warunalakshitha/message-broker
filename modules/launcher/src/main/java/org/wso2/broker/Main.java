@@ -25,21 +25,12 @@ import org.wso2.broker.amqp.AmqpServerConfiguration;
 import org.wso2.broker.amqp.Server;
 import org.wso2.broker.core.Broker;
 import org.wso2.broker.core.configuration.BrokerConfiguration;
-import org.wso2.broker.core.security.authentication.user.User;
-import org.wso2.broker.core.security.authentication.user.UserStoreManager;
-import org.wso2.broker.core.security.authentication.user.UsersFile;
-import org.wso2.broker.core.security.authentication.util.BrokerSecurityConstants;
 import org.wso2.carbon.config.ConfigProviderFactory;
 import org.wso2.carbon.config.ConfigurationException;
 import org.wso2.carbon.config.provider.ConfigProvider;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.List;
 
 /**
  * Starting point of the broker.
@@ -51,11 +42,10 @@ public class Main {
     public static void main(String[] args) throws Exception {
         try {
             ConfigProvider configProvider = initConfigProvider();
-            BrokerConfiguration configuration = configProvider.getConfigurationObject("broker",
-                    BrokerConfiguration.class);
+            BrokerConfiguration configuration = configProvider
+                    .getConfigurationObject("broker", BrokerConfiguration.class);
             AmqpServerConfiguration serverConfiguration = configProvider
                     .getConfigurationObject("transport.amqp", AmqpServerConfiguration.class);
-            loadAuthConfigurations();
             Broker broker = new Broker(configuration);
             broker.startMessageDelivery();
             Server amqpServer = new Server(broker, serverConfiguration);
@@ -69,10 +59,11 @@ public class Main {
     /**
      * Loads configurations during the broker start up.
      * method will try to <br/>
-     *  (1) Load the configuration file specified in 'broker.file' (e.g. -Dbroker.file=<FilePath>). <br/>
-     *  (2) If -Dbroker.file is not specified, the broker.yaml file exists in current directory and load it. <br/>
+     * (1) Load the configuration file specified in 'broker.file' (e.g. -Dbroker.file=<FilePath>). <br/>
+     * (2) If -Dbroker.file is not specified, the broker.yaml file exists in current directory and load it. <br/>
+     * <p>
+     * <b>Note: </b> if provided configuration file cannot be read broker will not start.
      *
-     *  <b>Note: </b> if provided configuration file cannot be read broker will not start.
      * @return a configuration object.
      */
     private static ConfigProvider initConfigProvider() throws ConfigurationException {
@@ -86,61 +77,5 @@ public class Main {
         }
 
         return ConfigProviderFactory.getConfigProvider(brokerYamlFile, null);
-    }
-
-    private static void loadAuthConfigurations() throws ConfigurationException {
-        loadJaaSConfiguration();
-        loadUsers();
-    }
-
-    /**
-     * Configure jass.conf path in system property java.security.auth.login.config
-     * If system property not set, this will copy the jass.conf from jar file and store to current working directory.
-     * Then set the system property.
-     */
-    private static void loadJaaSConfiguration() {
-        InputStream resourceStream = null;
-        String jaasConfigPath = System.getProperty(BrokerSecurityConstants.SYSTEM_PARAM_JAAS_CONFIG);
-        if (jaasConfigPath == null || jaasConfigPath.trim().isEmpty()) {
-            try {
-                log.info("Using in-built configuration file -" + BrokerSecurityConstants.JAAS_FILE_NAME);
-                resourceStream = Main.class.getResourceAsStream("/" + BrokerSecurityConstants.JAAS_FILE_NAME);
-                Path path = Paths.get("", BrokerSecurityConstants.JAAS_FILE_NAME).toAbsolutePath();
-                Files.copy(resourceStream, path, StandardCopyOption.REPLACE_EXISTING);
-                System.setProperty(BrokerSecurityConstants.SYSTEM_PARAM_JAAS_CONFIG, path.toString());
-            } catch (IOException e) {
-                log.error("Unable to load the file - " + BrokerSecurityConstants.JAAS_FILE_NAME, e);
-            } finally {
-                try {
-                    if (resourceStream != null) {
-                        resourceStream.close();
-                    }
-                } catch (IOException e) {
-                    log.error("Error while closing file - " + BrokerSecurityConstants.JAAS_FILE_NAME, e);
-                }
-            }
-        }
-    }
-
-    /**
-     * Loads the users from users.yaml during broker startup
-     */
-    private static void loadUsers() throws ConfigurationException {
-        Path usersYamlFile;
-        String usersFilePath = System.getProperty(BrokerSecurityConstants.SYSTEM_PARAM_USERS_CONFIG);
-        if (usersFilePath == null || usersFilePath.trim().isEmpty()) {
-            // use current path.
-            usersYamlFile = Paths.get("", BrokerSecurityConstants.USERS_FILE_NAME).toAbsolutePath();
-        } else {
-            usersYamlFile = Paths.get(usersFilePath).toAbsolutePath();
-        }
-        ConfigProvider configProvider = ConfigProviderFactory.getConfigProvider(usersYamlFile, null);
-        UsersFile usersFile = configProvider.getConfigurationObject("wso2.users", UsersFile.class);
-        if (usersFile != null) {
-            List<User> users = usersFile.getUsers();
-            for (User user : users) {
-                UserStoreManager.addUser(user);
-            }
-        }
     }
 }

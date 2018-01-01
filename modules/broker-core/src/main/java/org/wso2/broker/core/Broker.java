@@ -41,7 +41,7 @@ public final class Broker {
     public Broker(BrokerConfiguration configuration) {
         this.messagingEngine = new MessagingEngine(configuration);
         this.brokerConfiguration = configuration;
-        this.authenticationManager = new AuthenticationManager(configuration.getAuthenticator().getClassName());
+        this.authenticationManager = new AuthenticationManager(configuration.getAuthenticator());
     }
 
     public BrokerConfiguration getBrokerConfiguration() {

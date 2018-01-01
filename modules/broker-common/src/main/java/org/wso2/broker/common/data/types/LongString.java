@@ -27,7 +27,7 @@ import java.util.Arrays;
 
 /**
  * AMQP Long String.
- *
+ * <p>
  * long-string = long-uint *OCTET ; length + content
  */
 public class LongString implements EncodableData {
@@ -67,6 +67,10 @@ public class LongString implements EncodableData {
         buf.readBytes(data);
 
         return new LongString(size, data);
+    }
+
+    public static LongString parse(byte[] data) {
+        return new LongString(data.length, data);
     }
 
     /**

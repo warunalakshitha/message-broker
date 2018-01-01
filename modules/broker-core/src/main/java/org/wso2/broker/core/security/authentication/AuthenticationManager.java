@@ -20,7 +20,7 @@ package org.wso2.broker.core.security.authentication;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wso2.broker.core.security.authentication.jaas.JaasAuthenticator;
+import org.wso2.broker.core.configuration.BrokerConfiguration;
 import org.wso2.broker.core.security.authentication.sasl.BrokerSecurityProvider;
 import org.wso2.broker.core.security.authentication.sasl.SaslServerBuilder;
 import org.wso2.broker.core.security.authentication.sasl.plain.PlainSaslServerBuilder;
@@ -29,7 +29,8 @@ import org.wso2.broker.core.security.authentication.util.BrokerSecurityConstants
 import java.security.Security;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import javax.security.auth.login.AppConfigurationEntry;
+import javax.security.auth.login.Configuration;
 
 /**
  * Class for manage authentication of message broker incoming connections
@@ -42,25 +43,18 @@ public class AuthenticationManager {
     /**
      * Map of SASL Server mechanisms
      */
-    private Map<String, SaslServerBuilder> saslMechanisms = new ConcurrentHashMap<>();
-    /**
-     * Authenticator for broker
-     */
-    private Authenticator authenticator;
+    private Map<String, SaslServerBuilder> saslMechanisms = new HashMap<>();
 
     /**
      * Constructor for initialize authentication manager and resgiter sasl servers for security provider
      * mechanisms
      */
-    public AuthenticationManager(String authenticatorClassName) {
+    public AuthenticationManager(BrokerConfiguration.AuthenticationConfiguration authenticationConfiguration) {
 
-        try {
-            Class<?> aClass = Class.forName(authenticatorClassName);
-            authenticator = (Authenticator) aClass.newInstance();
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-            authenticator = new JaasAuthenticator();
-            log.error("Default authenticator will be used since given authenticator class: " + authenticatorClassName
-                    + " cannot be loaded due to error.", e);
+        if (authenticationConfiguration != null) {
+            Configuration jaasConfig = createJaasConfig(authenticationConfiguration.getLoginModule(),
+                    authenticationConfiguration.getOptions());
+            Configuration.setConfiguration(jaasConfig);
         }
         registerSASLServers();
     }
@@ -70,9 +64,7 @@ public class AuthenticationManager {
      */
     private void registerSASLServers() {
         // create PLAIN SaslServer builder
-        Map<String, Object> properties = new HashMap<>();
-        properties.put(BrokerSecurityConstants.AUTHENTICATOR_PROPERTY, authenticator);
-        PlainSaslServerBuilder plainSaslServerBuilder = new PlainSaslServerBuilder(properties);
+        PlainSaslServerBuilder plainSaslServerBuilder = new PlainSaslServerBuilder();
         saslMechanisms.put(plainSaslServerBuilder.getMechanismName(), plainSaslServerBuilder);
         // Register given Sasl Server factories
         if (Security
@@ -87,19 +79,30 @@ public class AuthenticationManager {
     }
 
     /**
+     * create jaas config
+     *
+     * @param loginModuleClassName Jaas login module class name
+     * @return
+     */
+    private static Configuration createJaasConfig(String loginModuleClassName, Map<String, String> options) {
+        AppConfigurationEntry[] entries = {
+                new AppConfigurationEntry(loginModuleClassName, AppConfigurationEntry.LoginModuleControlFlag.REQUIRED,
+                        options)
+        };
+        return new Configuration() {
+            @Override
+            public AppConfigurationEntry[] getAppConfigurationEntry(String name) {
+                return entries;
+            }
+        };
+    }
+
+    /**
      * Provides map of security mechanisms registered for broker
      *
      * @return Registered security Mechanisms
      */
     public Map<String, SaslServerBuilder> getSaslMechanisms() {
         return saslMechanisms;
-    }
-
-    public Authenticator getAuthenticator() {
-        return authenticator;
-    }
-
-    public void setAuthenticator(Authenticator authenticator) {
-        this.authenticator = authenticator;
     }
 }

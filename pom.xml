@@ -145,6 +145,11 @@
                 <version>${derby.version}</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.security.caas</groupId>
+                <artifactId>org.wso2.carbon.security.caas</artifactId>
+                <version>${carbon.security.caas.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -190,5 +195,6 @@
         <findbugs.annotations.version>3.0.1</findbugs.annotations.version>
         <hikari.version>2.7.4</hikari.version>
         <derby.version>10.13.1.1</derby.version>
+        <carbon.security.caas.version>1.0.2-m2</carbon.security.caas.version>
     </properties>
 </project>

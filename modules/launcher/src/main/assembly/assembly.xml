@@ -29,8 +29,15 @@
             <includes>
                 <include>log4j.properties</include>
                 <include>broker.yaml</include>
+            </includes>
+            <fileMode>644</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>src/main/resources/</directory>
+            <outputDirectory>conf/security</outputDirectory>
+            <includes>
                 <include>users.yaml</include>
-                <include>jaas.conf</include>
+                <include>carbon-jaas.config</include>
             </includes>
             <fileMode>644</fileMode>
         </fileSet>

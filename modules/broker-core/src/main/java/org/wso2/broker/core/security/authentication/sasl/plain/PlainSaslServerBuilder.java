@@ -18,7 +18,6 @@
  */
 package org.wso2.broker.core.security.authentication.sasl.plain;
 
-import org.wso2.broker.core.security.authentication.jaas.BrokerCallbackHandler;
 import org.wso2.broker.core.security.authentication.sasl.SaslServerBuilder;
 
 import java.util.Map;
@@ -31,13 +30,6 @@ import javax.security.sasl.SaslServerFactory;
 public class PlainSaslServerBuilder implements SaslServerBuilder {
 
     static final String MECHANISM = "PLAIN";
-    private CallbackHandler callbackHandler;
-    private Map<String, ?> properties;
-
-    public PlainSaslServerBuilder(Map<String, ?> properties) {
-        callbackHandler = new BrokerCallbackHandler();
-        this.properties = properties;
-    }
 
     public String getMechanismName() {
         return MECHANISM;
@@ -45,12 +37,12 @@ public class PlainSaslServerBuilder implements SaslServerBuilder {
 
     @Override
     public CallbackHandler getCallbackHandler() {
-        return callbackHandler;
+        return new UsernamePasswordCallbackHandler();
     }
 
     @Override
     public Map<String, ?> getProperties() {
-        return properties;
+        return null;
     }
 
     @Override

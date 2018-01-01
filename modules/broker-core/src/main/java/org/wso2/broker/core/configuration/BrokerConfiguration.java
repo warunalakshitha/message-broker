@@ -19,6 +19,9 @@
 
 package org.wso2.broker.core.configuration;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Represents configuration for broker.
  */
@@ -112,14 +115,24 @@ public class BrokerConfiguration {
      */
     public static class AuthenticationConfiguration {
 
-        private String className;
+        private String loginModule;
 
-        public String getClassName() {
-            return className;
+        private Map<String, String> options = new HashMap<>();
+
+        public String getLoginModule() {
+            return loginModule;
         }
 
-        public void setClassName(String className) {
-            this.className = className;
+        public void setLoginModule(String loginModule) {
+            this.loginModule = loginModule;
+        }
+
+        public Map<String, String> getOptions() {
+            return options;
+        }
+
+        public void setOptions(Map<String, String> options) {
+            this.options = options;
         }
     }
 

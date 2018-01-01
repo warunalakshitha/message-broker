@@ -22,7 +22,9 @@ broker:
   password: root
 
  authenticator:
-  className: org.wso2.broker.core.security.authentication.jaas.JaasAuthenticator
+  loginModule: org.wso2.carbon.security.caas.api.module.UsernamePasswordLoginModule
+  options:
+   debug: true
 
 transport.amqp:
  plain:
