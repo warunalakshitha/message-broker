@@ -14,8 +14,8 @@
 #   limitations under the License.
 ################################################################################
 
-wso2.users:
- users:
- -
-   username: admin
-   password: admin
+users:
+-
+  username: admin
+  password: YWRtaW4=
+  permission: createLoginContext,modifyPrincipals

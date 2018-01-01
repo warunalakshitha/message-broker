@@ -20,6 +20,6 @@
 
 <suite name="ParentSuite">
     <suite-files>
-        <suite-file path="broker-auto-start-suite.xml" />
+        <suite-file path="broker-auto-start-suite.xml"/>
     </suite-files>
 </suite>

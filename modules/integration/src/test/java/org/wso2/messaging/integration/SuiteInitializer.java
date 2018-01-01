@@ -29,9 +29,7 @@ import org.wso2.broker.amqp.AmqpServerConfiguration;
 import org.wso2.broker.amqp.Server;
 import org.wso2.broker.core.Broker;
 import org.wso2.broker.core.configuration.BrokerConfiguration;
-import org.wso2.broker.core.security.authentication.user.User;
-import org.wso2.broker.core.security.authentication.user.UserStoreManager;
-import org.wso2.broker.core.security.authentication.util.BrokerSecurityConstants;
+import org.wso2.carbon.security.caas.api.module.UsernamePasswordLoginModule;
 import org.wso2.messaging.integration.util.TestConstants;
 
 import java.io.File;
@@ -41,6 +39,9 @@ public class SuiteInitializer {
      * Class logger.
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(SuiteInitializer.class);
+
+    // System property to specify the path of the CARBON HOME
+    public static final String SYSTEM_PARAM_CARBON_HOME = "carbon.home";
 
     private Broker broker;
     private Server server;
@@ -53,7 +54,7 @@ public class SuiteInitializer {
         BrokerConfiguration configuration = new BrokerConfiguration();
         BrokerConfiguration.AuthenticationConfiguration authenticationConfiguration = new BrokerConfiguration
                 .AuthenticationConfiguration();
-        authenticationConfiguration.setClassName("org.wso2.broker.core.security.authentication.jaas.JaasAuthenticator");
+        authenticationConfiguration.setLoginModule(UsernamePasswordLoginModule.class.getCanonicalName());
         configuration.setAuthenticator(authenticationConfiguration);
         AmqpServerConfiguration serverConfiguration = new AmqpServerConfiguration();
         serverConfiguration.getPlain().setPort(port);
@@ -71,18 +72,9 @@ public class SuiteInitializer {
         broker.startMessageDelivery();
         server = new Server(broker, serverConfiguration);
         server.start();
-
         // set jaas.conf as system properties
-        File jaasConfig = new File(
-                this.getClass().getClassLoader().getResource(BrokerSecurityConstants.JAAS_FILE_NAME).getFile());
-        String jaasConfigPath = System
-                .setProperty(BrokerSecurityConstants.SYSTEM_PARAM_JAAS_CONFIG, jaasConfig.getAbsolutePath());
-
-        //add test user
-        User testUser = new User();
-        testUser.setUsername(adminUsername);
-        testUser.setPassword(adminPassword);
-        UserStoreManager.addUser(testUser);
+        System.setProperty(SYSTEM_PARAM_CARBON_HOME,
+                System.getProperty("user.dir") + File.separator + "src/test/resources");
     }
 
     @AfterSuite
