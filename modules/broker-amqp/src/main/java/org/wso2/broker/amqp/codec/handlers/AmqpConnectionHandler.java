@@ -143,7 +143,6 @@ public class AmqpConnectionHandler extends ChannelInboundHandlerAdapter {
 
     /**
      * Method to set {@link SaslServer} to handler
-     *
      */
     public void setSaslServer(SaslServer saslServer) {
         this.saslServer = saslServer;

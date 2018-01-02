@@ -39,7 +39,7 @@ import javax.security.auth.login.Configuration;
  */
 public class AuthenticationManager {
 
-    private static final Logger log = LoggerFactory.getLogger(AuthenticationManager.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AuthenticationManager.class);
     /**
      * Map of SASL Server mechanisms
      */
@@ -69,10 +69,10 @@ public class AuthenticationManager {
         if (Security
                 .insertProviderAt(new BrokerSecurityProvider(BrokerSecurityConstants.PROVIDER_NAME, saslMechanisms), 1)
                 == -1) {
-            log.error("Unable to load AMQ security authentication providers.");
+            LOGGER.error("Unable to load AMQ security authentication providers.");
         } else {
-            if (log.isDebugEnabled()) {
-                log.debug("AMQ security authentication mechanisms providers successfully registered.");
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("AMQ security authentication mechanisms providers successfully registered.");
             }
         }
     }
