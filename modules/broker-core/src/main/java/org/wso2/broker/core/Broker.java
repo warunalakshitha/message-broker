@@ -40,9 +40,10 @@ public final class Broker {
         this.messagingEngine = new MessagingEngine(configuration);
         this.authenticationManager = new AuthenticationManager(configuration.getAuthenticator());
     }
-    
+
     /**
      * Provides {@link AuthenticationManager} for broker
+     *
      * @return Broker authentication manager
      */
     public AuthenticationManager getAuthenticationManager() {
@@ -55,7 +56,8 @@ public final class Broker {
 
     /**
      * Acknowledge single or a given set of messages. Removes the message from underlying queue
-     * @param queueName   name of the queue the relevant messages belongs to
+     *
+     * @param queueName name of the queue the relevant messages belongs to
      * @param messageId delivery tag of the message sent by the broker
      */
     public void acknowledge(String queueName, long messageId) {
