@@ -29,10 +29,10 @@ import org.wso2.broker.amqp.AmqpServerConfiguration;
 import org.wso2.broker.amqp.Server;
 import org.wso2.broker.core.Broker;
 import org.wso2.broker.core.configuration.BrokerConfiguration;
-import org.wso2.carbon.security.caas.api.module.UsernamePasswordLoginModule;
+import org.wso2.broker.core.security.authentication.jaas.BrokerLoginModule;
+import org.wso2.broker.core.security.authentication.user.User;
+import org.wso2.broker.core.security.authentication.user.UserStoreManager;
 import org.wso2.messaging.integration.util.TestConstants;
-
-import java.io.File;
 
 public class SuiteInitializer {
     /**
@@ -54,7 +54,7 @@ public class SuiteInitializer {
         BrokerConfiguration configuration = new BrokerConfiguration();
         BrokerConfiguration.AuthenticationConfiguration authenticationConfiguration = new BrokerConfiguration
                 .AuthenticationConfiguration();
-        authenticationConfiguration.setLoginModule(UsernamePasswordLoginModule.class.getCanonicalName());
+        authenticationConfiguration.setLoginModule(BrokerLoginModule.class.getCanonicalName());
         configuration.setAuthenticator(authenticationConfiguration);
         AmqpServerConfiguration serverConfiguration = new AmqpServerConfiguration();
         serverConfiguration.getPlain().setPort(port);
@@ -72,9 +72,11 @@ public class SuiteInitializer {
         broker.startMessageDelivery();
         server = new Server(broker, serverConfiguration);
         server.start();
-        // set jaas.conf as system properties
-        System.setProperty(SYSTEM_PARAM_CARBON_HOME,
-                System.getProperty("user.dir") + File.separator + "src/test/resources");
+        //add test user
+        User testUser = new User();
+        testUser.setUsername(adminUsername);
+        testUser.setPassword(adminPassword);
+        UserStoreManager.addUser(testUser);
     }
 
     @AfterSuite

@@ -20,7 +20,6 @@ package org.wso2.broker.core.security.authentication.sasl.plain;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.regex.Pattern;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import javax.security.sasl.SaslException;
@@ -43,7 +42,7 @@ public class PlainSaslServer implements SaslServer {
 
     private String authenticationId;
 
-    public static final String DEFAULT_JAAS_LOGIN_MODULE = "CarbonSecurityConfig";
+    public static final String BROKER_SECURITY_CONFIG = "BrokerSecurityConfig";
 
     public static final String PLAIN_MECHANISM = "PLAIN";
 
@@ -59,32 +58,46 @@ public class PlainSaslServer implements SaslServer {
     @Override
     public byte[] evaluateResponse(byte[] response) throws SaslException {
         try {
-            String[] tokens = Pattern.compile("\u0000").splitAsStream(new String(response, StandardCharsets.UTF_8))
-                    .toArray(String[]::new);
-            if (tokens.length != 3) {
-                throw new SaslException(
-                        "Invalid SASL/PLAIN response. Tokens length should be 3 but received " + tokens.length);
+            int authzidNullPosition = getUTF8NULPosition(response, 0);
+            if (authzidNullPosition < 0) {
+                throw new SaslException("Invalid SASL/PLAIN response due to authzid null terminator not found");
             }
-            String authcid = tokens[1];
-            String password = tokens[2];
-            if (authcid != null && password != null) {
-                callbackHandler.setUsername(authcid);
-                callbackHandler.setPassword(password.toCharArray());
-                try {
-                    LoginContext loginContext = new LoginContext(DEFAULT_JAAS_LOGIN_MODULE, callbackHandler);
-                    loginContext.login();
-                    isComplete = true;
-                    authenticationId = authcid;
-                    return new byte[0];
-                } catch (LoginException e) {
-                    throw new SaslException("Error while authenticate user with login module ", e);
-                }
-            } else {
-                throw new SaslException("Invalid username or password received.");
+            int authcidNullPosition = getUTF8NULPosition(response, authzidNullPosition + 1);
+            if (authcidNullPosition < 0) {
+                throw new SaslException("Invalid SASL/PLAIN response due to authcid null terminator not found");
+            }
+            String authcid = new String(response, authzidNullPosition + 1,
+                    authcidNullPosition - authzidNullPosition - 1, StandardCharsets.UTF_8);
+            int passwordLen = response.length - authcidNullPosition - 1;
+            char[] password = new char[passwordLen];
+            for (int i = 0; i < passwordLen; i++) {
+                password[i] = (char) response[++authcidNullPosition];
+            }
+            callbackHandler.setUsername(authcid);
+            callbackHandler.setPassword(password);
+            try {
+                LoginContext loginContext = new LoginContext(BROKER_SECURITY_CONFIG, callbackHandler);
+                loginContext.login();
+                isComplete = true;
+                authenticationId = authcid;
+                return new byte[0];
+            } catch (LoginException e) {
+                throw new SaslException("Error while authenticate user with login module ", e);
             }
         } catch (IOException e) {
             throw new SaslException("Error processing data: " + e, e);
         }
+    }
+
+    private int getUTF8NULPosition(byte[] response, int startPosition) {
+        int position = startPosition;
+        while (position < response.length) {
+            if (response[position] == (byte) 0) {
+                return position;
+            }
+            position++;
+        }
+        return -1;
     }
 
     @Override

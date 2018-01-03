@@ -24,7 +24,7 @@ broker:
  authenticator:
   loginModule: org.wso2.carbon.security.caas.api.module.UsernamePasswordLoginModule
   options:
-   debug: true
+   debug: false
 
 transport.amqp:
  plain:

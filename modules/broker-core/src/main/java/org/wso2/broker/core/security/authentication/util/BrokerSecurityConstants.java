@@ -32,6 +32,14 @@ public class BrokerSecurityConstants {
     // The name for the amq Java Cryptography Architecture (JCA) provider. This will be used to register Sasl servers
     public static final String PROVIDER_NAME = "AMQSASLProvider";
 
+    /*
+    User store Manager related constants
+   */
+    // Name of the users configuration file.
+    public static final String USERS_FILE_NAME = "users.yaml";
+    // System property to specify the path of the users config file.
+    public static final String SYSTEM_PARAM_USERS_CONFIG = "broker.users.config";
+
     private BrokerSecurityConstants() {
 
     }

@@ -34,13 +34,10 @@ public final class Broker {
 
     private final MessagingEngine messagingEngine;
 
-    private final BrokerConfiguration brokerConfiguration;
-
     private final AuthenticationManager authenticationManager;
 
     public Broker(BrokerConfiguration configuration) {
         this.messagingEngine = new MessagingEngine(configuration);
-        this.brokerConfiguration = configuration;
         this.authenticationManager = new AuthenticationManager(configuration.getAuthenticator());
     }
     

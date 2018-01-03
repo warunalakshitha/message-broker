@@ -65,7 +65,7 @@ public class ConnectionSecureOk extends MethodFrame {
                     ctx.writeAndFlush(new ConnectionSecure(getChannel(), LongString.parse(challenge)));
                 }
             } else {
-                throw new SaslException("Sasl server haven't been set during connection start");
+                throw new SaslException("Sasl server hasn't been set during connection start");
             }
         } catch (SaslException e) {
             if (LOGGER.isDebugEnabled()) {

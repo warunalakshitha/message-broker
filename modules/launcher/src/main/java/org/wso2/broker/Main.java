@@ -25,12 +25,17 @@ import org.wso2.broker.amqp.AmqpServerConfiguration;
 import org.wso2.broker.amqp.Server;
 import org.wso2.broker.core.Broker;
 import org.wso2.broker.core.configuration.BrokerConfiguration;
+import org.wso2.broker.core.security.authentication.user.User;
+import org.wso2.broker.core.security.authentication.user.UserStoreManager;
+import org.wso2.broker.core.security.authentication.user.UsersFile;
+import org.wso2.broker.core.security.authentication.util.BrokerSecurityConstants;
 import org.wso2.carbon.config.ConfigProviderFactory;
 import org.wso2.carbon.config.ConfigurationException;
 import org.wso2.carbon.config.provider.ConfigProvider;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 /**
  * Starting point of the broker.
@@ -48,6 +53,7 @@ public class Main {
                     .getConfigurationObject("transport.amqp", AmqpServerConfiguration.class);
             Broker broker = new Broker(configuration);
             broker.startMessageDelivery();
+            loadUsers();
             Server amqpServer = new Server(broker, serverConfiguration);
             amqpServer.run();
         } catch (Throwable e) {
@@ -76,5 +82,27 @@ public class Main {
         }
 
         return ConfigProviderFactory.getConfigProvider(brokerYamlFile, null);
+    }
+
+    /**
+     * Loads the users from users.yaml during broker startup
+     */
+    private static void loadUsers() throws ConfigurationException {
+        Path usersYamlFile;
+        String usersFilePath = System.getProperty(BrokerSecurityConstants.SYSTEM_PARAM_USERS_CONFIG);
+        if (usersFilePath == null || usersFilePath.trim().isEmpty()) {
+            // use current path.
+            usersYamlFile = Paths.get("", BrokerSecurityConstants.USERS_FILE_NAME).toAbsolutePath();
+        } else {
+            usersYamlFile = Paths.get(usersFilePath).toAbsolutePath();
+        }
+        ConfigProvider configProvider = ConfigProviderFactory.getConfigProvider(usersYamlFile, null);
+        UsersFile usersFile = configProvider.getConfigurationObject("wso2.users", UsersFile.class);
+        if (usersFile != null) {
+            List<User> users = usersFile.getUsers();
+            for (User user : users) {
+                UserStoreManager.addUser(user);
+            }
+        }
     }
 }

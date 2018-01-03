@@ -24,6 +24,7 @@ import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wso2.broker.amqp.codec.AmqConstant;
+import org.wso2.broker.amqp.codec.BlockingTask;
 import org.wso2.broker.amqp.codec.handlers.AmqpConnectionHandler;
 import org.wso2.broker.common.data.types.FieldTable;
 import org.wso2.broker.common.data.types.LongString;
@@ -70,37 +71,38 @@ public class ConnectionStartOk extends MethodFrame {
 
     @Override
     public void handle(ChannelHandlerContext ctx, AmqpConnectionHandler connectionHandler) {
-        Broker broker = connectionHandler.getBroker();
-        SaslServer saslServer;
-        SaslServerBuilder saslServerBuilder = broker.getAuthenticationManager().getSaslMechanisms().get(mechanisms
-                .toString());
-        try {
-            if (saslServerBuilder != null) {
-                saslServer = Sasl.createSaslServer(mechanisms.toString(), AmqConstant.AMQP_PROTOCOL_IDENTIFIER,
-                        connectionHandler.getConfiguration().getPlain().getHostName(),
-                        saslServerBuilder.getProperties(), saslServerBuilder.getCallbackHandler());
-                connectionHandler.setSaslServer(saslServer);
-            } else {
-                throw new SaslException("Server does not support for mechanism: " + mechanisms);
-            }
-            if (saslServer != null) {
-                byte[] challenge = saslServer.evaluateResponse(response.getBytes());
-                if (saslServer.isComplete()) {
-                    ctx.writeAndFlush(new ConnectionTune(256, 65535, 0));
+        ctx.fireChannelRead((BlockingTask) () -> {
+            Broker broker = connectionHandler.getBroker();
+            SaslServer saslServer;
+            SaslServerBuilder saslServerBuilder = broker.getAuthenticationManager().getSaslMechanisms()
+                    .get(mechanisms.toString());
+            try {
+                if (saslServerBuilder != null) {
+                    saslServer = Sasl.createSaslServer(mechanisms.toString(), AmqConstant.AMQP_PROTOCOL_IDENTIFIER,
+                            connectionHandler.getConfiguration().getPlain().getHostName(),
+                            saslServerBuilder.getProperties(), saslServerBuilder.getCallbackHandler());
+                    connectionHandler.setSaslServer(saslServer);
                 } else {
-                    ctx.writeAndFlush(new ConnectionSecure(getChannel(), LongString.parse(challenge)));
+                    throw new SaslException("Server does not support for mechanism: " + mechanisms);
                 }
-
-            } else {
-                throw new SaslException("Sasl server cannot be found for mechanism: " + mechanisms);
+                if (saslServer != null) {
+                    byte[] challenge = saslServer.evaluateResponse(response.getBytes());
+                    if (saslServer.isComplete()) {
+                        ctx.writeAndFlush(new ConnectionTune(256, 65535, 0));
+                    } else {
+                        ctx.writeAndFlush(new ConnectionSecure(getChannel(), LongString.parse(challenge)));
+                    }
+                } else {
+                    throw new SaslException("Sasl server cannot be found for mechanism: " + mechanisms);
+                }
+            } catch (SaslException e) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Exception occurred while authenticating incoming connection ", e);
+                }
+                String replyText = "Authentication Failed";
+                ctx.writeAndFlush(new ConnectionClose(403, ShortString.parseString(replyText), 10, 11));
             }
-        } catch (SaslException e) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Exception occurred while authenticating incoming connection ", e);
-            }
-            String replyText = "Authentication Failed";
-            ctx.writeAndFlush(new ConnectionClose(403, ShortString.parseString(replyText), 10, 11));
-        }
+        });
     }
 
     public static AmqMethodBodyFactory getFactory() {
