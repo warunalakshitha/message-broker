@@ -182,7 +182,7 @@ public class Server {
                          .addLast(new AmqpDecoder())
                          .addLast(new AmqpEncoder())
                          .addLast(new AmqpConnectionHandler(broker, configuration))
-                         .addLast(new AmqpMessageWriter())
+                         .addLast(ioExecutors, new AmqpMessageWriter())
                          .addLast(ioExecutors, new BlockingTaskHandler());
         }
     }
@@ -202,8 +202,13 @@ public class Server {
                          .addLast(sslHandlerFactory.create())
                          .addLast(new AmqpDecoder())
                          .addLast(new AmqpEncoder())
+<<<<<<< HEAD
                          .addLast(new AmqpConnectionHandler(broker, configuration))
                          .addLast(new AmqpMessageWriter())
+=======
+                         .addLast(new AmqpConnectionHandler(broker))
+                         .addLast(ioExecutors, new AmqpMessageWriter())
+>>>>>>> 82e4f8dad11fc5f600d0f38427802917b7daf4ce
                          .addLast(ioExecutors, new BlockingTaskHandler());
         }
     }
