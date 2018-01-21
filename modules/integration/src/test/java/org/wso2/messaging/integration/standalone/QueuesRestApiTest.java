@@ -47,6 +47,7 @@ import org.wso2.broker.core.rest.model.QueueMetadata;
 import org.wso2.messaging.integration.util.ClientHelper;
 
 import java.io.IOException;
+import java.util.Base64;
 import javax.jms.JMSException;
 import javax.jms.Queue;
 import javax.jms.QueueConnection;
@@ -94,13 +95,16 @@ public class QueuesRestApiTest {
     }
 
 
+    @Parameters({"admin-username", "admin-password"})
     @Test
-    public void testPositiveCreateQueue() throws IOException {
+    public void testPositiveCreateQueue(String username, String password) throws IOException {
         String queueName = "testPositiveCreateQueue";
         QueueCreateRequest request = new QueueCreateRequest()
                 .name(queueName).durable(false).autoDelete(false);
 
         HttpPost httpPost = new HttpPost(apiBasePath + "/queues");
+        String encodedHeader = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+        httpPost.setHeader("Authorization", "Basic " + encodedHeader);
 
         String value = objectMapper.writeValueAsString(request);
         StringEntity stringEntity = new StringEntity(value, ContentType.APPLICATION_JSON);
@@ -120,11 +124,14 @@ public class QueuesRestApiTest {
 
     }
 
+    @Parameters({"admin-username", "admin-password"})
     @Test
-    public void testDuplicateQueueCreation() throws IOException {
+    public void testDuplicateQueueCreation(String username, String password) throws IOException {
         QueueCreateRequest request = new QueueCreateRequest()
                 .name("testDuplicateQueueCreation").durable(false).autoDelete(false);
         HttpPost httpPost = new HttpPost(apiBasePath + "/queues");
+        String encodedHeader = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+        httpPost.setHeader("Authorization", "Basic " + encodedHeader);
 
         String value = objectMapper.writeValueAsString(request);
         StringEntity stringEntity = new StringEntity(value, ContentType.APPLICATION_JSON);
@@ -142,10 +149,13 @@ public class QueuesRestApiTest {
         Assert.assertFalse(error.getMessage().isEmpty(), "Response body shouldn't be empty");
     }
 
-
+    @Parameters({"admin-username", "admin-password"})
     @Test
-    public void testQueueRetrieval() throws IOException {
+    public void testQueueRetrieval(String username, String password) throws IOException {
         HttpGet httpGet = new HttpGet(apiBasePath + QueuesApiDelegate.QUEUES_API_PATH);
+        String encodedHeader = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+        httpGet.setHeader("Authorization", "Basic " + encodedHeader);
+
         CloseableHttpResponse response = client.execute(httpGet);
 
         Assert.assertEquals(response.getStatusLine().getStatusCode(), HttpStatus.SC_OK, "Incorrect status code");
@@ -181,6 +191,9 @@ public class QueuesRestApiTest {
 
         // Test queue retrieval through REST API
         HttpGet httpGet = new HttpGet(apiBasePath + QueuesApiDelegate.QUEUES_API_PATH + "/" + queueName);
+        String encodedHeader = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+        httpGet.setHeader("Authorization", "Basic " + encodedHeader);
+
         CloseableHttpResponse response = client.execute(httpGet);
 
         Assert.assertEquals(response.getStatusLine().getStatusCode(), HttpStatus.SC_OK, "Incorrect status code.");
@@ -199,8 +212,9 @@ public class QueuesRestApiTest {
         connection.close();
     }
 
+    @Parameters({"admin-username", "admin-password"})
     @Test
-    public void testDeleteQueue() throws IOException {
+    public void testDeleteQueue(String username, String password) throws IOException {
         String queueName = "testDeleteQueue";
 
         // Create a queue to delete.
@@ -208,6 +222,8 @@ public class QueuesRestApiTest {
                 .name(queueName).durable(false).autoDelete(false);
 
         HttpPost httpPost = new HttpPost(apiBasePath + "/queues");
+        String encodedHeader = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+        httpPost.setHeader("Authorization", "Basic " + encodedHeader);
 
         String value = objectMapper.writeValueAsString(request);
         StringEntity stringEntity = new StringEntity(value, ContentType.APPLICATION_JSON);
@@ -218,15 +234,19 @@ public class QueuesRestApiTest {
 
         // Delete the queue.
         HttpDelete httpDelete = new HttpDelete(apiBasePath + QueuesApiDelegate.QUEUES_API_PATH + "/" + queueName);
+        httpDelete.setHeader("Authorization", "Basic " + encodedHeader);
         response = client.execute(httpDelete);
 
         Assert.assertEquals(response.getStatusLine().getStatusCode(), HttpStatus.SC_OK);
     }
 
+    @Parameters({"admin-username", "admin-password"})
     @Test
-    public void testNegativeDeleteQueue() throws IOException {
+    public void testNegativeDeleteQueue(String username, String password) throws IOException {
         String queueName = "testNegativeDeleteQueue";
         HttpDelete httpDelete = new HttpDelete(apiBasePath + QueuesApiDelegate.QUEUES_API_PATH + "/" + queueName);
+        String encodedHeader = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+        httpDelete.setHeader("Authorization", "Basic " + encodedHeader);
         CloseableHttpResponse response = client.execute(httpDelete);
 
         Assert.assertEquals(response.getStatusLine().getStatusCode(), HttpStatus.SC_NOT_FOUND);

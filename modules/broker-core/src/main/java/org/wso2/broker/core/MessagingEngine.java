@@ -353,4 +353,8 @@ final class MessagingEngine {
     public QueueHandler getQueue(String queueName) {
         return queueRegistry.getQueueHandler(queueName);
     }
+
+    public ExchangeRegistry getExchangeRegistry() {
+        return exchangeRegistry;
+    }
 }

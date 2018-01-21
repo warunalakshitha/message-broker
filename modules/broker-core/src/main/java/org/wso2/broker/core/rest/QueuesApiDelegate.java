@@ -25,6 +25,7 @@ import org.wso2.broker.core.Broker;
 import org.wso2.broker.core.BrokerException;
 import org.wso2.broker.core.Consumer;
 import org.wso2.broker.core.QueueHandler;
+import org.wso2.broker.core.exception.UnauthorizedException;
 import org.wso2.broker.core.rest.model.ConsumerMetadata;
 import org.wso2.broker.core.rest.model.QueueCreateRequest;
 import org.wso2.broker.core.rest.model.QueueCreateResponse;
@@ -38,6 +39,7 @@ import java.util.List;
 import java.util.Objects;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
@@ -68,7 +70,11 @@ public class QueuesApiDelegate {
                 throw new BadRequestException("Queue already exists.");
             }
         } catch (BrokerException e) {
-            throw new BadRequestException(e.getMessage(), e);
+            if (e instanceof UnauthorizedException) {
+                throw new NotAuthorizedException(e.getMessage(), e);
+            } else {
+                throw new BadRequestException(e.getMessage(), e);
+            }
         } catch (URISyntaxException e) {
             LOGGER.error("Error occurred while generating location URI ", e);
             throw new InternalServerErrorException(e.getMessage(), e);
@@ -91,7 +97,11 @@ public class QueuesApiDelegate {
                 throw new NotFoundException("Queue " + queueName + " doesn't exist.");
             }
         } catch (BrokerException e) {
-            throw new BadRequestException(e.getMessage(), e);
+            if (e instanceof UnauthorizedException) {
+                throw new NotAuthorizedException(e.getMessage(), e);
+            } else {
+                throw new BadRequestException(e.getMessage(), e);
+            }
         }
     }
 

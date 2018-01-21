@@ -27,7 +27,7 @@ import org.wso2.broker.common.data.types.LongString;
 /**
  * AMQP frame for connection.secure
  * Parameter Summary:
- *     1. challenge (LongString) - security challenge data
+ *     1. challenge (LongString) - auth challenge data
  */
 public class ConnectionSecure extends MethodFrame {
 

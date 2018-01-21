@@ -28,12 +28,15 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import javax.sql.DataSource;
 
-abstract class BaseDao {
+/**
+ * Defines base functionality required at persistence layer.
+ */
+public abstract class BaseDao {
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseDao.class);
 
     private final DataSource dataSource;
 
-    BaseDao(DataSource dataSource) {
+    public BaseDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
@@ -79,5 +82,15 @@ abstract class BaseDao {
                 LOGGER.error("Error closing result set.", e);
             }
         }
+    }
+
+    protected String getSQLFormattedIdList(int listLength) {
+        StringBuilder paramList = new StringBuilder();
+        paramList.append("?");
+
+        for (int i = 1; i < listLength; i++) {
+            paramList.append(",?");
+        }
+        return paramList.toString();
     }
 }

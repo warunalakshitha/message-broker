@@ -21,18 +21,22 @@ package org.wso2.broker.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wso2.broker.common.BrokerConfigProvider;
+import org.wso2.broker.auth.AuthManager;
+import org.wso2.broker.auth.BrokerAuthException;
+import org.wso2.broker.auth.authorization.enums.RBindingKey;
+import org.wso2.broker.auth.authorization.enums.RExchange;
+import org.wso2.broker.auth.authorization.enums.RGroups;
+import org.wso2.broker.auth.authorization.enums.RQueue;
 import org.wso2.broker.common.StartupContext;
 import org.wso2.broker.common.data.types.FieldTable;
 import org.wso2.broker.coordination.BasicHaListener;
 import org.wso2.broker.coordination.HaListener;
 import org.wso2.broker.coordination.HaStrategy;
-import org.wso2.broker.core.configuration.BrokerConfiguration;
+import org.wso2.broker.core.exception.UnauthorizedException;
 import org.wso2.broker.core.metrics.BrokerMetricManager;
 import org.wso2.broker.core.metrics.DefaultBrokerMetricManager;
 import org.wso2.broker.core.metrics.NullBrokerMetricManager;
 import org.wso2.broker.core.rest.api.QueuesApi;
-import org.wso2.broker.core.security.authentication.AuthenticationManager;
 import org.wso2.broker.core.store.StoreFactory;
 import org.wso2.broker.rest.BrokerServiceRunner;
 import org.wso2.carbon.metrics.core.MetricService;
@@ -50,7 +54,7 @@ public final class Broker {
 
     private final MessagingEngine messagingEngine;
 
-    private final AuthenticationManager authenticationManager;
+    private final AuthManager authManager;
 
     /**
      * Used to manage metrics related to broker
@@ -78,10 +82,7 @@ public final class Broker {
         BrokerServiceRunner serviceRunner = startupContext.getService(BrokerServiceRunner.class);
         serviceRunner.deploy(new QueuesApi(this));
         startupContext.registerService(Broker.class, this);
-        BrokerConfigProvider configProvider = startupContext.getService(BrokerConfigProvider.class);
-        BrokerConfiguration brokerConfiguration = configProvider
-                .getConfigurationObject(BrokerConfiguration.NAMESPACE, BrokerConfiguration.class);
-        this.authenticationManager = new AuthenticationManager(brokerConfiguration);
+
         haStrategy = startupContext.getService(HaStrategy.class);
         if (haStrategy == null) {
             brokerHelper = new BrokerHelper();
@@ -89,20 +90,33 @@ public final class Broker {
             LOGGER.info("Broker is in PASSIVE mode"); //starts up in passive mode
             brokerHelper = new HaEnabledBrokerHelper();
         }
+        this.authManager = startupContext.getService(AuthManager.class);
     }
 
     /**
-     * Provides {@link AuthenticationManager} for broker
+     * Provides {@link AuthManager} for broker
      *
-     * @return Broker authentication manager
+     * @return Broker auth manager
      */
-    public AuthenticationManager getAuthenticationManager() {
-        return authenticationManager;
+    public AuthManager getAuthManager() {
+        return authManager;
     }
 
     public void publish(Message message) throws BrokerException {
-        messagingEngine.publish(message);
-        metricManager.markPublish();
+        try {
+            if (authManager.authorize(RGroups.BINDING_KEY.toString(), message.getMetadata().getRoutingKey(),
+                                      RBindingKey.PUBLISH.getAsInt())) {
+                messagingEngine.publish(message);
+                metricManager.markPublish();
+            } else {
+                throw new BrokerException(
+                        "Unauthorized to publish to routingKey : " + message.getMetadata().getRoutingKey());
+            }
+        } catch (BrokerAuthException e) {
+            throw new UnauthorizedException(
+                    "Exception occurred while authorizing publish to routingKey : " + message.getMetadata()
+                            .getRoutingKey());
+        }
     }
 
     /**
@@ -121,38 +135,112 @@ public final class Broker {
      * @throws BrokerException throws {@link BrokerException} if unable to add the consumer
      */
     public void addConsumer(Consumer consumer) throws BrokerException {
-        messagingEngine.consume(consumer);
+        try {
+            if (authManager.authorize(RGroups.QUEUE.toString(), consumer.getQueueName(), RQueue.CONSUME.getAsInt())) {
+                messagingEngine.consume(consumer);
+            } else {
+                throw new UnauthorizedException("Unauthorized to consume queue : " + consumer.getQueueName());
+            }
+        } catch (BrokerAuthException e) {
+            throw new UnauthorizedException(
+                    "Exception occurred while authorizing consume queue : " + consumer.getQueueName());
+        }
     }
 
     public void removeConsumer(Consumer consumer) {
         messagingEngine.closeConsumer(consumer);
     }
 
-    public void createExchange(String exchangeName, String type,
-                               boolean passive, boolean durable) throws BrokerException {
-        messagingEngine.createExchange(exchangeName, type, passive, durable);
+    public void createExchange(String exchangeName, String type, boolean passive, boolean durable)
+            throws BrokerException {
+        try {
+            if (authManager.authorize(RGroups.EXCHANGE.toString(), exchangeName, RExchange.CREATE.getAsInt())) {
+                messagingEngine.createExchange(exchangeName, type, passive, durable);
+            } else {
+                throw new UnauthorizedException("Unauthorized to create exchange : " + exchangeName);
+            }
+        } catch (BrokerAuthException e) {
+            throw new UnauthorizedException(
+                    "Exception occurred while authorizing create exchange : " + exchangeName);
+        }
+
     }
 
     public void deleteExchange(String exchangeName, boolean ifUnused) throws BrokerException {
-        messagingEngine.deleteExchange(exchangeName, ifUnused);
+        try {
+            if (authManager.authorize(RGroups.EXCHANGE.toString(), exchangeName, RExchange.DELETE.getAsInt())) {
+                messagingEngine.deleteExchange(exchangeName, ifUnused);
+            } else {
+                throw new UnauthorizedException("Unauthorized to delete exchange : " + exchangeName);
+            }
+        } catch (BrokerAuthException e) {
+            throw new UnauthorizedException(
+                    "Exception occurred while authorizing delete exchange : " + exchangeName);
+        }
     }
+
 
     public boolean createQueue(String queueName, boolean passive,
                             boolean durable, boolean autoDelete) throws BrokerException {
-        return messagingEngine.createQueue(queueName, passive, durable, autoDelete);
+        try {
+            if (authManager.authorize(RGroups.QUEUE.toString(), queueName, RQueue.CREATE.getAsInt())) {
+                return messagingEngine.createQueue(queueName, passive, durable, autoDelete);
+            } else {
+                throw new UnauthorizedException("Unauthorized to create queue : " + queueName);
+            }
+        } catch (BrokerAuthException e) {
+            throw new UnauthorizedException(
+                    "Exception occurred while authorizing create queue : " + queueName);
+        }
     }
 
     public boolean deleteQueue(String queueName, boolean ifUnused, boolean ifEmpty) throws BrokerException {
-        return messagingEngine.deleteQueue(queueName, ifUnused, ifEmpty);
+        try {
+            if (authManager.authorize(RGroups.QUEUE.toString(), queueName, RQueue.DELETE.getAsInt())) {
+                return messagingEngine.deleteQueue(queueName, ifUnused, ifEmpty);
+            } else {
+                throw new UnauthorizedException("Unauthorized to delete queue : " + queueName);
+            }
+        } catch (BrokerAuthException e) {
+            throw new UnauthorizedException(
+                    "Exception occurred while authorizing delete queue : " + queueName);
+        }
     }
 
     public void bind(String queueName, String exchangeName,
                      String routingKey, FieldTable arguments) throws BrokerException {
-        messagingEngine.bind(queueName, exchangeName, routingKey, arguments);
+        Exchange exchange = messagingEngine.getExchangeRegistry().getExchange(exchangeName);
+        boolean isAuthorised;
+        try {
+            if (exchange.getType().equals(Exchange.Type.TOPIC)) {
+                isAuthorised = authManager
+                        .authorizeByPattern(RGroups.BINDING_KEY.toString(), routingKey, RBindingKey.BIND.getAsInt());
+            } else {
+                isAuthorised = authManager
+                        .authorize(RGroups.BINDING_KEY.toString(), routingKey, RBindingKey.BIND.getAsInt());
+            }
+            if (isAuthorised) {
+                messagingEngine.bind(queueName, exchangeName, routingKey, arguments);
+            } else {
+                throw new UnauthorizedException("Unauthorized to bind on routingKey : " + routingKey);
+            }
+        } catch (BrokerAuthException e) {
+            throw new UnauthorizedException(
+                    "Exception occurred while authorizing bind on routingKey : " + routingKey);
+        }
     }
 
     public void unbind(String queueName, String exchangeName, String routingKey) throws BrokerException {
-        messagingEngine.unbind(queueName, exchangeName, routingKey);
+        try {
+            if (authManager.authorize(RGroups.BINDING_KEY.toString(), routingKey, RBindingKey.UNBIND.getAsInt())) {
+                messagingEngine.unbind(queueName, exchangeName, routingKey);
+            } else {
+                throw new UnauthorizedException("Unauthorized to unbind on routingKey : " + routingKey);
+            }
+        } catch (BrokerAuthException e) {
+            throw new UnauthorizedException(
+                    "Exception occurred while authorizing unbind on routingKey : " + routingKey);
+        }
     }
 
     public void startMessageDelivery() {

@@ -19,3 +19,7 @@ broker.users:
  -
    username: admin
    password: admin
+   roles:
+   -
+    admin
+

@@ -59,6 +59,7 @@ public class DbUtil {
         hikariDataSourceConfig.setJdbcUrl(DATABASE_URL);
         hikariDataSourceConfig.setDriverClassName(DRIVER_CLASS_NAME);
         hikariDataSourceConfig.setAutoCommit(false);
+        hikariDataSourceConfig.setMaximumPoolSize(100);
         return new HikariDataSource(hikariDataSourceConfig);
     }
 

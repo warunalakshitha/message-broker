@@ -85,6 +85,7 @@
                         <Import-Package>
                             io.netty.buffer.*;version="${netty.import.package.range.version}",
                             org.slf4j.*;version="${slf4j.logging.package.import.version.range}"
+                            javax.sql.*;version="0.0.0"
                         </Import-Package>
                         <Export-Package>
                             org.wso2.broker.common.*;version="${project.version}",

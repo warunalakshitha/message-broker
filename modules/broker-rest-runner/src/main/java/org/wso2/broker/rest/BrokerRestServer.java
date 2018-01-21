@@ -21,11 +21,13 @@ package org.wso2.broker.rest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wso2.broker.auth.AuthManager;
 import org.wso2.broker.common.BrokerConfigProvider;
 import org.wso2.broker.common.StartupContext;
 import org.wso2.broker.coordination.BasicHaListener;
 import org.wso2.broker.coordination.HaListener;
 import org.wso2.broker.coordination.HaStrategy;
+import org.wso2.broker.rest.auth.BasicAuthInterceptor;
 import org.wso2.broker.rest.config.RestServerConfiguration;
 import org.wso2.msf4j.MicroservicesRunner;
 
@@ -57,6 +59,8 @@ public class BrokerRestServer {
         port = Integer.parseInt(configuration.getPlain().getPort());
         microservicesRunner = new MicroservicesRunner(port);
         startupContext.registerService(BrokerServiceRunner.class, new BrokerServiceRunner(microservicesRunner));
+        AuthManager authManager = startupContext.getService(AuthManager.class);
+        microservicesRunner.addGlobalRequestInterceptor(new BasicAuthInterceptor(authManager::authenticate));
         haStrategy = startupContext.getService(HaStrategy.class);
         if (haStrategy == null) {
             brokerRestRunnerHelper = new BrokerRestRunnerHelper();

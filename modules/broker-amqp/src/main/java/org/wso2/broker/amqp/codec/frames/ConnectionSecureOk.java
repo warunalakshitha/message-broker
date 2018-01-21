@@ -34,7 +34,7 @@ import javax.security.sasl.SaslServer;
 /**
  * AMQP frame for connection.secure.ok
  * Parameter Summary:
- *     1. response (LongString) - security response data
+ *     1. response (LongString) - auth response data
  */
 public class ConnectionSecureOk extends MethodFrame {
 
