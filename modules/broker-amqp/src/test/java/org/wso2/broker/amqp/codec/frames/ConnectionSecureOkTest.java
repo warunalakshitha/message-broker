@@ -22,11 +22,20 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.mockito.Mockito;
 import org.testng.Assert;
+import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 import org.wso2.broker.auth.AuthManager;
 import org.wso2.broker.common.data.types.LongString;
 
 public class ConnectionSecureOkTest {
+
+
+    private AuthManager authManager;
+
+    @BeforeTest
+    public void init() {
+        authManager = Mockito.mock(AuthManager.class);
+    }
 
     @Test
     public void testEncodeDecode() throws Exception {

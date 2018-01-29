@@ -27,9 +27,10 @@ import org.wso2.broker.common.data.types.FieldTable;
 import org.wso2.broker.common.data.types.ShortString;
 
 public class BasicConsumeTest {
+
     @Test
     public void testEncodeDecode() throws Exception {
-        BasicConsume testFrame = new BasicConsume(1,
+       BasicConsume testFrame = new BasicConsume(1,
                                                   ShortString.parseString("queue"),
                                                   ShortString.parseString("1"),
                                                   true,

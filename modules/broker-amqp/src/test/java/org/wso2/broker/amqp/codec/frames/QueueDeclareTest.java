@@ -27,6 +27,7 @@ import org.wso2.broker.common.data.types.FieldTable;
 import org.wso2.broker.common.data.types.ShortString;
 
 public class QueueDeclareTest {
+
     @Test
     public void testEncodeDecode() throws Exception {
         QueueDeclare testFrame = new QueueDeclare(1,

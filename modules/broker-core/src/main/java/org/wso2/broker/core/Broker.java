@@ -22,8 +22,15 @@ package org.wso2.broker.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wso2.broker.auth.AuthManager;
+import org.wso2.broker.auth.BrokerAuthException;
+import org.wso2.broker.auth.authorization.enums.RBindingKey;
+import org.wso2.broker.auth.authorization.enums.RExchange;
+import org.wso2.broker.auth.authorization.enums.RGroups;
+import org.wso2.broker.auth.authorization.enums.RQueue;
 import org.wso2.broker.common.StartupContext;
 import org.wso2.broker.common.data.types.FieldTable;
+import org.wso2.broker.common.util.function.ThrowingRunnable;
+import org.wso2.broker.common.util.function.ThrowingSupplier;
 import org.wso2.broker.coordination.BasicHaListener;
 import org.wso2.broker.coordination.HaListener;
 import org.wso2.broker.coordination.HaStrategy;
@@ -95,9 +102,11 @@ public final class Broker {
         return authManager;
     }
 
-    public void publish(Message message) throws BrokerException {
-        messagingEngine.publish(message);
-        metricManager.markPublish();
+    public void publish(Message message) throws BrokerException, BrokerAuthException {
+        authorize(RGroups.BINDING_KEY.toString(), message.getMetadata().getRoutingKey(), RBindingKey.PUBLISH.getAsInt(),
+                  () -> {
+                      messagingEngine.publish(message); metricManager.markPublish();
+                  });
     }
 
     /**
@@ -125,17 +134,22 @@ public final class Broker {
     }
 
     public void createExchange(String exchangeName, String type,
-                               boolean passive, boolean durable) throws BrokerException {
-        messagingEngine.createExchange(exchangeName, type, passive, durable);
+                               boolean passive, boolean durable) throws BrokerException, BrokerAuthException {
+        authorize(RGroups.EXCHANGE.toString(), exchangeName, RExchange.CREATE.getAsInt(), () -> {
+            messagingEngine.createExchange(exchangeName, type, passive, durable);
+        });
     }
 
-    public void deleteExchange(String exchangeName, boolean ifUnused) throws BrokerException {
-        messagingEngine.deleteExchange(exchangeName, ifUnused);
+    public void deleteExchange(String exchangeName, boolean ifUnused) throws BrokerException, BrokerAuthException {
+        authorize(RGroups.EXCHANGE.toString(), exchangeName, RExchange.DELETE.getAsInt(), () -> {
+            messagingEngine.deleteExchange(exchangeName, ifUnused);
+        });
     }
 
     public boolean createQueue(String queueName, boolean passive,
-                            boolean durable, boolean autoDelete) throws BrokerException {
-        return messagingEngine.createQueue(queueName, passive, durable, autoDelete);
+                            boolean durable, boolean autoDelete) throws BrokerException, BrokerAuthException {
+        return authorize(RGroups.QUEUE.toString(), queueName, RQueue.CREATE.getAsInt(), () ->
+                messagingEngine.createQueue(queueName, passive, durable, autoDelete));
     }
 
     public boolean deleteQueue(String queueName, boolean ifUnused, boolean ifEmpty) throws BrokerException {
@@ -143,12 +157,31 @@ public final class Broker {
     }
 
     public void bind(String queueName, String exchangeName,
-                     String routingKey, FieldTable arguments) throws BrokerException {
-        messagingEngine.bind(queueName, exchangeName, routingKey, arguments);
+                     String routingKey, FieldTable arguments) throws BrokerException, BrokerAuthException {
+        Exchange exchange = messagingEngine.getExchangeRegistry().getExchange(exchangeName);
+        if (exchange.getType().equals(Exchange.Type.TOPIC)) {
+            authorizeByPattern(RGroups.BINDING_KEY.toString(), routingKey, RBindingKey.BIND.getAsInt(), () -> {
+                messagingEngine.bind(queueName, exchangeName, routingKey, arguments);
+            });
+        } else {
+            authorize(RGroups.BINDING_KEY.toString(), routingKey, RBindingKey.BIND.getAsInt(), () -> {
+                messagingEngine.bind(queueName, exchangeName, routingKey, arguments);
+            });
+        }
     }
 
-    public void unbind(String queueName, String exchangeName, String routingKey) throws BrokerException {
-        messagingEngine.unbind(queueName, exchangeName, routingKey);
+    public void unbind(String queueName, String exchangeName, String routingKey)
+            throws BrokerException, BrokerAuthException {
+        Exchange exchange = messagingEngine.getExchangeRegistry().getExchange(exchangeName);
+        if (exchange.getType().equals(Exchange.Type.TOPIC)) {
+            authorizeByPattern(RGroups.BINDING_KEY.toString(), exchangeName, RBindingKey.UNBIND.getAsInt(), () -> {
+                messagingEngine.unbind(queueName, exchangeName, routingKey);
+            });
+        } else {
+            authorize(RGroups.BINDING_KEY.toString(), exchangeName, RBindingKey.UNBIND.getAsInt(), () -> {
+                messagingEngine.unbind(queueName, exchangeName, routingKey);
+            });
+        }
     }
 
     public void startMessageDelivery() {
@@ -182,6 +215,35 @@ public final class Broker {
 
     public void moveToDlc(String queueName, Message message) throws BrokerException {
         messagingEngine.moveToDlc(queueName, message);
+    }
+
+    private boolean authorize(String resourceGroup, String resource, int permission,
+                              ThrowingSupplier<Boolean, BrokerException> supplier)
+            throws BrokerException, BrokerAuthException {
+        if (authManager.authorize(resourceGroup, resource, permission)) {
+            return supplier.get();
+        } else {
+            throw new BrokerAuthException("Unauthorized action on resource : " + resource);
+        }
+    }
+
+    private void authorize(String resourceGroup, String resource, int permission, ThrowingRunnable<BrokerException>
+            runnable) throws BrokerException, BrokerAuthException {
+        if (authManager.authorize(resourceGroup, resource, permission)) {
+            runnable.run();
+        } else {
+            throw new BrokerAuthException("Unauthorized action on resource : " + resource);
+        }
+    }
+
+    private void authorizeByPattern(String resourceGroup, String resource, int permission,
+                                    ThrowingRunnable<BrokerException> runnable)
+            throws BrokerAuthException, BrokerException {
+        if (authManager.authorizeByPattern(resourceGroup, resource, permission)) {
+            runnable.run();
+        } else {
+            throw new BrokerAuthException("Unauthorized action on resource : " + resource);
+        }
     }
 
     private class BrokerHelper {
@@ -227,6 +289,7 @@ public final class Broker {
         public void activate() {
             try {
                 messagingEngine.reloadOnBecomingActive();
+                authManager.getPermissionStore().clearAllPermissions();
             } catch (BrokerException e) {
                 LOGGER.error("Error on loading data from the database on becoming active ", e);
             }

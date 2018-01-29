@@ -34,6 +34,16 @@ wso2.broker.auth:
   jaas:
    # JAAS login module used to authenticate users
    loginModule: org.wso2.broker.auth.authentication.jaas.BrokerLoginModule
+  #Broker authentication related configurations.
+ authorization:
+  # Enable the authorization
+  enabled: true
+  # Permission cache related configs
+  permissionCache:
+   # Cache timeout in minutes
+   cacheTimeout: 15
+   # Maximum no. of cache elements
+   cacheSize: 5000
 
 # AMQP transport related configurations.
 wso2.broker.transport.amqp:

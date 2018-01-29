@@ -30,12 +30,12 @@ public class ExchangeDeclareTest {
     @Test
     public void testEncodeDecode() throws Exception {
         ExchangeDeclare testFrame = new ExchangeDeclare(1,
-                                                  ShortString.parseString("amq.topic"),
-                                                  ShortString.parseString("topic"),
-                                                  true,
-                                                  true,
-                                                  true,
-                                                  FieldTable.EMPTY_TABLE);
+                                                        ShortString.parseString("amq.topic"),
+                                                        ShortString.parseString("topic"),
+                                                        true,
+                                                        true,
+                                                        true,
+                                                        FieldTable.EMPTY_TABLE);
         ByteBuf buf = Unpooled.buffer((int) testFrame.getMethodBodySize());
         testFrame.writeMethod(buf);
         ExchangeDeclare decodedFrame = (ExchangeDeclare) ExchangeDeclare.getFactory()

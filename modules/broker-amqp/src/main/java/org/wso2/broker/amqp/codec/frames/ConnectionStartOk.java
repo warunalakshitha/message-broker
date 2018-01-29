@@ -21,11 +21,13 @@ package org.wso2.broker.amqp.codec.frames;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.util.AttributeKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wso2.broker.amqp.codec.BlockingTask;
 import org.wso2.broker.amqp.codec.handlers.AmqpConnectionHandler;
 import org.wso2.broker.auth.AuthManager;
+import org.wso2.broker.auth.BrokerAuthConstants;
 import org.wso2.broker.common.data.types.FieldTable;
 import org.wso2.broker.common.data.types.LongString;
 import org.wso2.broker.common.data.types.ShortString;
@@ -77,8 +79,10 @@ public class ConnectionStartOk extends MethodFrame {
                             .createSaslServer(connectionHandler.getConfiguration().getHostName(), mechanism.toString());
                     if (saslServer != null) {
                         connectionHandler.setSaslServer(saslServer);
-                        byte[] challenge = authManager.authenticate(saslServer, response.getBytes());
+                        byte[] challenge = saslServer.evaluateResponse(response.getBytes());
                         if (saslServer.isComplete()) {
+                            ctx.channel().attr(AttributeKey.valueOf(BrokerAuthConstants.AUTHORIZATION_ID)).set
+                                    (saslServer.getAuthorizationID());
                             ctx.writeAndFlush(new ConnectionTune(256, 65535, 0));
                         } else {
                             ctx.writeAndFlush(new ConnectionSecure(getChannel(), LongString.parse(challenge)));

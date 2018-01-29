@@ -18,16 +18,29 @@
  */
 package org.wso2.broker.auth;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wso2.broker.auth.authentication.sasl.BrokerSecurityProvider;
 import org.wso2.broker.auth.authentication.sasl.SaslServerBuilder;
 import org.wso2.broker.auth.authentication.sasl.plain.PlainSaslServerBuilder;
+import org.wso2.broker.auth.authorization.Permission;
+import org.wso2.broker.auth.authorization.PermissionStore;
+import org.wso2.broker.auth.authorization.dao.impl.ResourceDaoImpl;
+import org.wso2.broker.auth.authorization.dao.impl.ResourceGroupDaoImpl;
 import org.wso2.broker.auth.user.UserStoreManager;
+import org.wso2.broker.common.util.function.ThrowingFunction;
 
 import java.security.Security;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import javax.annotation.Nonnull;
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
 import javax.security.sasl.Sasl;
@@ -48,9 +61,17 @@ public class AuthManager {
      */
     private Map<String, SaslServerBuilder> saslMechanisms = new HashMap<>();
 
+    private PermissionStore permissionStore;
+
     private UserStoreManager userStoreManager;
 
+    private LoadingCache<String, Permission> userCache;
+
     private boolean authenticationEnabled;
+
+    private boolean authorizationEnabled;
+
+    private static ThreadLocal<String> authContext = new ThreadLocal<>();
 
     /**
      * Constructor for initialize authentication manager and register sasl servers for auth provider mechanisms
@@ -59,6 +80,7 @@ public class AuthManager {
                        UserStoreManager userStoreManager) throws Exception {
 
         this.authenticationEnabled = securityConfiguration.getAuthentication().isEnabled();
+        this.authorizationEnabled = securityConfiguration.getAuthorization().isEnabled();
         this.userStoreManager = userStoreManager;
         if (authenticationEnabled) {
             String jaasConfigPath = System.getProperty(BrokerAuthConstants.SYSTEM_PARAM_JAAS_CONFIG);
@@ -69,6 +91,18 @@ public class AuthManager {
                 Configuration.setConfiguration(jaasConfig);
             }
             registerSaslServers();
+        }
+        if (authorizationEnabled) {
+            this.permissionStore = new PermissionStore(new ResourceDaoImpl(dataSource), new ResourceGroupDaoImpl
+                    (dataSource));
+            this.userCache = CacheBuilder.newBuilder().maximumSize(securityConfiguration.getAuthorization()
+                                                                                        .getPermissionCache()
+                                                                                        .getCacheSize())
+                                         .expireAfterWrite(
+                                                 securityConfiguration.getAuthorization().getPermissionCache()
+                                                                      .getCacheTimeout(),
+                                                 TimeUnit.MINUTES)
+                                         .build(new UserCacheLoader());
         }
     }
 
@@ -133,27 +167,101 @@ public class AuthManager {
     }
 
     /**
-     * Authenticate response based on given sasl server
+     * Authenticate given user with credential based on broker @{@link UserStoreManager}
      *
-     * @param saslServer Sasl server
-     * @param response   Client response
-     * @return challenge
-     * @throws SaslException Throws if error occurs while evaluating the response
+     * @param userName    Username
+     * @param credentials User Credentials
+     * @return Authenticated or not
+     * @throws BrokerAuthException Throws if error occur during authentication
      */
-    public byte[] authenticate(SaslServer saslServer, byte[] response) throws SaslException {
-        return saslServer.evaluateResponse(response);
+    public boolean authenticate(String userName, char... credentials) throws BrokerAuthException {
+        if (userStoreManager.authenticate(userName, credentials)) {
+            AuthManager.getAuthContext().set(userName);
+            return true;
+        }
+        return false;
     }
-
 
     /**
-     * Provides map of security mechanisms registered for broker
+     * Authorize given resource for given resource group and permission. User should have permission with
+     * a resource which has same resource name.
+     * user's authorised
      *
-     * @return Registered security Mechanisms
+     * @param resourceGroup Resource Group
+     * @param resource      Resource
+     * @param permission    Permission
+     * @return If authorised or not
+     * @throws BrokerAuthException Throws if error occur during authorization
      */
-    public Map<String, SaslServerBuilder> getSaslMechanisms() {
-        return saslMechanisms;
+    public boolean authorize(String resourceGroup, String resource, int permission) throws BrokerAuthException {
+        return authorize(resourceGroup, resource, permission, (userGroups) ->
+                permissionStore.authorize(resourceGroup, resource, userGroups, permission));
     }
 
+    /**
+     * Authorize given resource for given resource group and permission. User should have permission with
+     * resource pattern which matches the given resource
+     * user's authorised
+     *
+     * @param resourceGroup Resource Group
+     * @param resource      Resource
+     * @param permission    Permission
+     * @return If authorised or not
+     * @throws BrokerAuthException Throws if error occur during authorization
+     */
+    public boolean authorizeByPattern(String resourceGroup, String resource, int permission)
+            throws BrokerAuthException {
+        return authorize(resourceGroup, resource, permission, (userGroups) ->
+                permissionStore.authorizeByPattern(resourceGroup, resource, userGroups, permission));
+    }
+
+    private boolean authorize(String resourceGroup, String resource, int permission, ThrowingFunction<HashSet,
+            Boolean, BrokerAuthException> authFunction) throws BrokerAuthException {
+        if (isAuthorizationEnabled()) {
+            try {
+                String userName = AuthManager.getAuthContext().get();
+                if (userName != null) {
+                    Permission userPermission = userCache.get(userName);
+                    AtomicInteger resourcePerm = userPermission.getPermissions().get(resourceGroup + Permission
+                            .RESOURCE_GROUP_SEPARATOR + resource);
+                    if (resourcePerm != null && (resourcePerm.intValue() & permission) == permission) {
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug("Permissions are loaded from cache for user name : {} resourceGroup: {} and "
+                                                 + "" + "resource : {} ", userName, resourceGroup, resource);
+                        }
+                        return true;
+                    } else {
+                        HashSet<String> userGroups = userPermission.getUserGroups();
+                        if (userGroups != null && authFunction.apply(userGroups)) {
+                            if (resourcePerm != null) {
+                                resourcePerm.set(resourcePerm.get() | permission);
+                            } else {
+                                userPermission.getPermissions().put(
+                                        resourceGroup + Permission.RESOURCE_GROUP_SEPARATOR + resource,
+                                        new AtomicInteger(permission));
+                            }
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    }
+                } else {
+                    throw new BrokerAuthException("Authorization id cannot be found in the context.");
+                }
+            } catch (ExecutionException e) {
+                throw new BrokerAuthException(
+                        "Error occurred while retrieving permissions from cache for resource: " + resource, e);
+            } finally {
+                authContext.remove();
+            }
+        } else {
+            return true;
+        }
+    }
+
+    public PermissionStore getPermissionStore() {
+        return permissionStore;
+    }
     /**
      * Provides broker authentication enabled.
      * @return broker authentication enabled or not
@@ -161,4 +269,23 @@ public class AuthManager {
     public boolean isAuthenticationEnabled() {
         return authenticationEnabled;
     }
+
+    public boolean isAuthorizationEnabled() {
+        return authorizationEnabled;
+    }
+
+    public static ThreadLocal<String> getAuthContext() {
+        return authContext;
+    }
+
+    private class UserCacheLoader extends CacheLoader<String, Permission> {
+        @Override
+        public Permission load(@Nonnull String userName) throws Exception {
+            Permission permission = new Permission();
+            permission.setPermissions(new HashMap<>());
+            permission.setUserGroups(userStoreManager.getUserRoleList(userName));
+            return permission;
+        }
+    }
+
 }

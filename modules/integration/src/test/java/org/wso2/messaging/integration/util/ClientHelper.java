@@ -19,9 +19,11 @@
 
 package org.wso2.messaging.integration.util;
 
+import org.apache.http.client.methods.HttpRequestBase;
 import org.wso2.broker.core.rest.BrokerAdminService;
 
 import java.net.URISyntaxException;
+import java.util.Base64;
 import java.util.Properties;
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -49,6 +51,18 @@ public class ClientHelper {
 
     public static String getRestApiBasePath(String brokerHost, String port) throws URISyntaxException {
         return "http://" + brokerHost + ":" + port + BrokerAdminService.API_BASE_PATH;
+    }
+
+    /**
+     * Set basic auth header to http request
+     * @param httpRequestBase HTTP request
+     * @param username Username
+     * @param password Password
+     */
+    public static void setAuthHeader(HttpRequestBase httpRequestBase, String username, String password) {
+        String basicAuthHeader = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+        httpRequestBase.setHeader("Authorization", "Basic " + basicAuthHeader);
+
     }
 
     public static class InitialContextBuilder {

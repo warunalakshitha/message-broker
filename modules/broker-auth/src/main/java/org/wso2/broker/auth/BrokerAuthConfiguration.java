@@ -35,6 +35,8 @@ public class BrokerAuthConfiguration {
 
     private AuthenticationConfiguration authentication = new AuthenticationConfiguration();
 
+    private AuthorizationConfiguration authorization = new AuthorizationConfiguration();
+
     public AuthenticationConfiguration getAuthentication() {
         return authentication;
     }
@@ -43,6 +45,14 @@ public class BrokerAuthConfiguration {
             AuthenticationConfiguration authentication
                                  ) {
         this.authentication = authentication;
+    }
+
+    public AuthorizationConfiguration getAuthorization() {
+        return authorization;
+    }
+
+    public void setAuthorization(AuthorizationConfiguration authorization) {
+        this.authorization = authorization;
     }
 
     /**
@@ -68,6 +78,34 @@ public class BrokerAuthConfiguration {
 
         public void setJaas(JaasConfiguration jaas) {
             this.jaas = jaas;
+        }
+    }
+
+    /**
+     * Represents authorization configuration for broker
+     */
+    public static class AuthorizationConfiguration {
+
+        private boolean enabled = true;
+
+        private PermissionCacheConfiguration permissionCache = new PermissionCacheConfiguration();
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public PermissionCacheConfiguration getPermissionCache() {
+            return permissionCache;
+        }
+
+        public void setPermissionCache(
+                PermissionCacheConfiguration permissionCache
+                                      ) {
+            this.permissionCache = permissionCache;
         }
     }
 
@@ -102,6 +140,35 @@ public class BrokerAuthConfiguration {
             this.options = options;
         }
     }
+
+    /**
+     * Represents permission cache configuration required for authorization
+     */
+    public static class PermissionCacheConfiguration {
+
+        /**
+         * Cache timeout in minutes
+         */
+        private int cacheTimeout = 15;
+        /**
+         * Maximum cache size
+         */
+        private int cacheSize = 5000;
+
+        public int getCacheTimeout() {
+            return cacheTimeout;
+        }
+
+        public void setCacheTimeout(int cacheTimeout) {
+            this.cacheTimeout = cacheTimeout;
+        }
+
+        public int getCacheSize() {
+            return cacheSize;
+        }
+
+        public void setCacheSize(int cacheSize) {
+            this.cacheSize = cacheSize;
+        }
+    }
 }
-
-

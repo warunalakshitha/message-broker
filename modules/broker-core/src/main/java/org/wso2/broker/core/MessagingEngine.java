@@ -365,4 +365,7 @@ final class MessagingEngine {
         exchangeRegistry.reloadExchangesOnBecomingActive(queueRegistry);
     }
 
+    public ExchangeRegistry getExchangeRegistry() {
+        return exchangeRegistry;
+    }
 }

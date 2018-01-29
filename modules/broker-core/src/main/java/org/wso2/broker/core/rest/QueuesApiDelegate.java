@@ -21,6 +21,7 @@ package org.wso2.broker.core.rest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wso2.broker.auth.BrokerAuthException;
 import org.wso2.broker.core.Broker;
 import org.wso2.broker.core.BrokerException;
 import org.wso2.broker.core.Consumer;
@@ -38,6 +39,7 @@ import java.util.List;
 import java.util.Objects;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
@@ -72,6 +74,8 @@ public class QueuesApiDelegate {
         } catch (URISyntaxException e) {
             LOGGER.error("Error occurred while generating location URI ", e);
             throw new InternalServerErrorException(e.getMessage(), e);
+        } catch (BrokerAuthException e) {
+            throw new NotAuthorizedException(e.getMessage(), e);
         }
     }
 

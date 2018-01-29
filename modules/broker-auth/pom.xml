@@ -67,10 +67,39 @@
             <groupId>org.wso2.carbon.config</groupId>
             <artifactId>org.wso2.carbon.config</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.ibatis</groupId>
+            <artifactId>ibatis2-common</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.derby</groupId>
+            <artifactId>derby</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.20.1</version>
+                <configuration>
+                    <suiteXmlFiles>
+                        <suiteXmlFile>src/test/resources/testng.xml</suiteXmlFile>
+                    </suiteXmlFiles>
+                    <systemPropertyVariables>
+                        <maven.test.haltafterfailure>false</maven.test.haltafterfailure>
+                        <framework.resource.location>${basedir}/src/test/resources</framework.resource.location>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
@@ -97,7 +126,10 @@
                         <Private-Package>
                         </Private-Package>
                         <Import-Package>
-                            org.slf4j.*;version="${slf4j.logging.package.import.version.range}"
+                            com.google.common.*;version="${guava.package.import.version.range}",
+                            javax.sql.*;version="0.0.0",
+                            org.slf4j.*;version="${slf4j.logging.package.import.version.range}",
+                            org.wso2.broker.common.*;version="${broker.package.import.range.version}"
                         </Import-Package>
                         <Export-Package>
                             org.wso2.broker.auth.*;version=${project.version},

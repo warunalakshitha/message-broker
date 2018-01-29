@@ -27,7 +27,8 @@ import org.wso2.broker.common.data.types.FieldTable;
 import org.wso2.broker.common.data.types.ShortString;
 
 public class QueueBindTest {
-    @Test
+
+     @Test
     public void testEncodeDecode() throws Exception {
         QueueBind testFrame = new QueueBind(1,
                                                   ShortString.parseString("queue"),

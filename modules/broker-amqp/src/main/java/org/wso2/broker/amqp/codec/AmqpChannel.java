@@ -28,6 +28,7 @@ import org.wso2.broker.amqp.AmqpDeliverMessage;
 import org.wso2.broker.amqp.AmqpServerConfiguration;
 import org.wso2.broker.amqp.codec.flow.ChannelFlowManager;
 import org.wso2.broker.amqp.metrics.AmqpMetricManager;
+import org.wso2.broker.auth.BrokerAuthException;
 import org.wso2.broker.common.data.types.FieldTable;
 import org.wso2.broker.common.data.types.ShortString;
 import org.wso2.broker.core.Broker;
@@ -138,22 +139,22 @@ public class AmqpChannel {
     }
 
     public void declareExchange(String exchangeName, String exchangeType,
-                                boolean passive, boolean durable) throws BrokerException {
+                                boolean passive, boolean durable) throws BrokerException, BrokerAuthException {
         broker.createExchange(exchangeName, exchangeType, passive, durable);
     }
 
     public void declareQueue(ShortString queue, boolean passive,
-                             boolean durable, boolean autoDelete) throws BrokerException {
+                             boolean durable, boolean autoDelete) throws BrokerException, BrokerAuthException {
         broker.createQueue(queue.toString(), passive, durable, autoDelete);
     }
 
     public void bind(ShortString queue, ShortString exchange,
-                     ShortString routingKey, FieldTable arguments) throws BrokerException {
+                     ShortString routingKey, FieldTable arguments) throws BrokerException, BrokerAuthException {
         broker.bind(queue.toString(), exchange.toString(), routingKey.toString(), arguments);
     }
 
     public ShortString consume(ShortString queueName, ShortString consumerTag, boolean exclusive,
-                               ChannelHandlerContext ctx) throws BrokerException {
+                               ChannelHandlerContext ctx) throws BrokerException, BrokerAuthException {
         ShortString tag = consumerTag;
         if (tag.isEmpty()) {
             tag = ShortString.parseString("sgen" + getNextConsumerTag());

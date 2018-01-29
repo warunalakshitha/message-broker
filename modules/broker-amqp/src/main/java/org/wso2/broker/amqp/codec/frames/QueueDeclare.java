@@ -21,12 +21,16 @@ package org.wso2.broker.amqp.codec.frames;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.util.Attribute;
+import io.netty.util.AttributeKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wso2.broker.amqp.codec.AmqpChannel;
 import org.wso2.broker.amqp.codec.BlockingTask;
 import org.wso2.broker.amqp.codec.ChannelException;
 import org.wso2.broker.amqp.codec.handlers.AmqpConnectionHandler;
+import org.wso2.broker.auth.AuthManager;
+import org.wso2.broker.auth.BrokerAuthConstants;
 import org.wso2.broker.common.data.types.FieldTable;
 import org.wso2.broker.common.data.types.ShortString;
 import org.wso2.broker.core.BrokerException;
@@ -57,7 +61,7 @@ public class QueueDeclare extends MethodFrame {
     private final FieldTable arguments;
 
     public QueueDeclare(int channel, ShortString queue, boolean passive, boolean durable, boolean exclusive,
-            boolean autoDelete, boolean noWait, FieldTable arguments) {
+                        boolean autoDelete, boolean noWait, FieldTable arguments) {
         super(channel, CLASS_ID, METHOD_ID);
         this.queue = queue;
         this.passive = passive;
@@ -105,6 +109,11 @@ public class QueueDeclare extends MethodFrame {
 
         ctx.fireChannelRead((BlockingTask) () -> {
             try {
+                Attribute<String> authorizationId =
+                        ctx.channel().attr(AttributeKey.valueOf(BrokerAuthConstants.AUTHORIZATION_ID));
+                if (authorizationId != null) {
+                    AuthManager.getAuthContext().set(authorizationId.get());
+                }
                 channel.declareQueue(queue, passive, durable, autoDelete);
                 ctx.writeAndFlush(new QueueDeclareOk(getChannel(), queue, 0, 0));
             } catch (BrokerException e) {
@@ -178,7 +187,6 @@ public class QueueDeclare extends MethodFrame {
             boolean autoDelete = (flags & 0x8) == 0x8;
             boolean noWait = (flags & 0x10) == 0x10;
             FieldTable arguments = FieldTable.parse(buf);
-
             return new QueueDeclare(channel, queue, passive, durable, exclusive, autoDelete, noWait, arguments);
         };
     }

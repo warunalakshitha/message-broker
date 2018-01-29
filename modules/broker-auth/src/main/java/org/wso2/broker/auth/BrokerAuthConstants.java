@@ -30,6 +30,7 @@ public class BrokerAuthConstants {
     Broker security provider related constants
      */
     public static final String AMQP_PROTOCOL_IDENTIFIER = "AMQP";
+    public static final String AUTHORIZATION_ID = "AuthorizationID";
     public static final String SASL_SERVER_FACTORY_PREFIX = "SaslServerFactory.";
     public static final String BROKER_SECURITY_PROVIDER_INFO = "Provider for registry AMQP SASL server factories";
     public static final double BROKER_SECURITY_PROVIDER_VERSION = 1.0;
