@@ -43,14 +43,16 @@ public class ConnectionStartOk extends MethodFrame {
     private final ShortString mechanism;
     private final ShortString locale;
     private final LongString response;
+    private final AuthManager authManager;
 
     public ConnectionStartOk(int channel, FieldTable clientProperties, ShortString mechanisms, ShortString locale,
-            LongString response) {
+                             LongString response, AuthManager authManager) {
         super(channel, (short) 10, (short) 11);
         this.clientProperties = clientProperties;
         this.mechanism = mechanisms;
         this.locale = locale;
         this.response = response;
+        this.authManager = authManager;
     }
 
     @Override
@@ -69,7 +71,6 @@ public class ConnectionStartOk extends MethodFrame {
     @Override
     public void handle(ChannelHandlerContext ctx, AmqpConnectionHandler connectionHandler) {
         ctx.fireChannelRead((BlockingTask) () -> {
-            AuthManager authManager = connectionHandler.getBroker().getAuthManager();
             if (authManager.isAuthenticationEnabled()) {
                 try {
                     SaslServer saslServer = authManager
@@ -99,13 +100,13 @@ public class ConnectionStartOk extends MethodFrame {
     }
 
 
-    public static AmqMethodBodyFactory getFactory() {
+    public static AmqMethodBodyFactory getFactory(AuthManager authManager) {
         return (buf, channel, size) -> {
             FieldTable clientProperties = FieldTable.parse(buf);
             ShortString mechanism = ShortString.parse(buf);
             LongString response = LongString.parse(buf);
             ShortString locale = ShortString.parse(buf);
-            return new ConnectionStartOk(channel, clientProperties, mechanism, locale, response);
+            return new ConnectionStartOk(channel, clientProperties, mechanism, locale, response, authManager);
         };
     }
 }

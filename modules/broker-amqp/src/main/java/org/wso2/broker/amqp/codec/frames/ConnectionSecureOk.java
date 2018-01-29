@@ -40,11 +40,15 @@ import javax.security.sasl.SaslServer;
 public class ConnectionSecureOk extends MethodFrame {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionSecureOk.class);
+
     private final LongString response;
 
-    public ConnectionSecureOk(int channel, LongString response) {
+    private AuthManager authManager;
+
+    public ConnectionSecureOk(int channel, LongString response, AuthManager authManager) {
         super(channel, (short) 10, (short) 21);
         this.response = response;
+        this.authManager = authManager;
     }
 
     @Override
@@ -61,7 +65,6 @@ public class ConnectionSecureOk extends MethodFrame {
     public void handle(ChannelHandlerContext ctx, AmqpConnectionHandler connectionHandler) {
         ctx.fireChannelRead((BlockingTask) () -> {
             try {
-                AuthManager authManager = connectionHandler.getBroker().getAuthManager();
                 SaslServer saslServer = connectionHandler.getSaslServer();
                 if (saslServer != null) {
                     byte[] challenge = authManager.authenticate(saslServer, response.getBytes());
@@ -83,10 +86,10 @@ public class ConnectionSecureOk extends MethodFrame {
         });
     }
 
-    public static AmqMethodBodyFactory getFactory() {
+    public static AmqMethodBodyFactory getFactory(AuthManager authManager) {
         return (buf, channel, size) -> {
             LongString response = LongString.parse(buf);
-            return new ConnectionSecureOk(channel, response);
+            return new ConnectionSecureOk(channel, response, authManager);
         };
     }
 

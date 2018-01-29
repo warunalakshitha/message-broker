@@ -18,14 +18,12 @@
  */
 package org.wso2.broker.auth;
 
-import com.sun.security.auth.UserPrincipal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wso2.broker.auth.authentication.sasl.BrokerSecurityProvider;
 import org.wso2.broker.auth.authentication.sasl.SaslServerBuilder;
 import org.wso2.broker.auth.authentication.sasl.plain.PlainSaslServerBuilder;
 import org.wso2.broker.auth.user.UserStoreManager;
-import org.wso2.carbon.kernel.context.PrivilegedCarbonContext;
 
 import java.security.Security;
 import java.util.HashMap;
@@ -143,15 +141,7 @@ public class AuthManager {
      * @throws SaslException Throws if error occurs while evaluating the response
      */
     public byte[] authenticate(SaslServer saslServer, byte[] response) throws SaslException {
-        byte[] challenge = saslServer.evaluateResponse(response);
-        if (saslServer.isComplete()) {
-            PrivilegedCarbonContext privilegedCarbonContext = PrivilegedCarbonContext.getCurrentContext();
-            if (privilegedCarbonContext.getUserPrincipal() == null) {
-                UserPrincipal userPrincipal = new UserPrincipal(saslServer.getAuthorizationID());
-                privilegedCarbonContext.setUserPrincipal(userPrincipal);
-            }
-        }
-        return challenge;
+        return saslServer.evaluateResponse(response);
     }
 
 

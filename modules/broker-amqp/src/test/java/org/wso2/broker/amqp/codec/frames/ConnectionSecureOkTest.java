@@ -20,19 +20,22 @@ package org.wso2.broker.amqp.codec.frames;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+import org.wso2.broker.auth.AuthManager;
 import org.wso2.broker.common.data.types.LongString;
 
 public class ConnectionSecureOkTest {
 
     @Test
     public void testEncodeDecode() throws Exception {
-        ConnectionSecureOk testFrame = new ConnectionSecureOk(1, LongString.parse(new byte[0]));
+        AuthManager authManager = Mockito.mock(AuthManager.class);
+        ConnectionSecureOk testFrame = new ConnectionSecureOk(1, LongString.parse(new byte[0]), authManager);
         ByteBuf buf = Unpooled.buffer((int) testFrame.getMethodBodySize());
         testFrame.writeMethod(buf);
-        ConnectionSecureOk decodedFrame = (ConnectionSecureOk) ConnectionSecureOk.getFactory()
-                .newInstance(buf, 1, testFrame.getMethodBodySize());
+        ConnectionSecureOk decodedFrame = (ConnectionSecureOk) ConnectionSecureOk
+                .getFactory(authManager).newInstance(buf, 1, testFrame.getMethodBodySize());
 
         Assert.assertEquals(decodedFrame.getChannel(), testFrame.getChannel(),
                 "Decoded frame's channel should match" + " the original frame's channel");
