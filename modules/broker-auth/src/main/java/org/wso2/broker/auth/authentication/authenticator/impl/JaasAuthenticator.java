@@ -70,6 +70,7 @@ public class JaasAuthenticator implements Authenticator {
     }
 
     /**
+<<<<<<< 02df7854124d447fb8bbb606a84f7e45cae02e62
      * Creates Jaas config.
      *
      * @param loginModuleClassName jaas login module class name

@@ -104,14 +104,14 @@ public class UserStoreManagerImpl implements UserStoreManager {
     }
 
     /**
-     * Retrieve the list of userRegistry for given username.
+     * Retrieve the list of userRegistry for given user identifier.
      *
-     * @param userName user name
-     * @return List of roles
+     * @param userId user identifier
+     * @return list of roles
      */
     @Override
-    public Set<String> getUserRoleList(String userName) {
-        User user = userRegistry.get(userName);
+    public Set<String> getUserRoleList(String userId) {
+        User user = userRegistry.get(userId);
         if (user != null) {
             return user.getRoles();
         }

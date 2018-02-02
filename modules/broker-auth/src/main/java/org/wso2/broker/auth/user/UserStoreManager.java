@@ -32,17 +32,17 @@ public interface UserStoreManager {
      *
      * @param userName    userName
      * @param credentials credentials
-     * @return Authentication result
-     * @throws BrokerAuthException Exception throws when authentication failed.
+     * @return authentication result
+     * @throws BrokerAuthException throws when authentication failed.
      */
     boolean authenticate(String userName, char... credentials) throws BrokerAuthException;
 
     /**
-     * Retrieve the list of users for given username.
+     * Retrieve the list of users for given user identifier.
      *
-     * @param userName user name
-     * @return List of roles
-     * @throws BrokerAuthException Exception throws when getting role list from user manager
+     * @param userId user identifier
+     * @return list of roles
+     * @throws BrokerAuthException throws when getting role list from user manager
      */
-    Set<String> getUserRoleList(String userName) throws BrokerAuthException;
+    Set<String> getUserRoleList(String userId) throws BrokerAuthException;
 }

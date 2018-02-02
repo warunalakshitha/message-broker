@@ -65,7 +65,11 @@ public class BrokerRestServer {
         }
 
         startupContext.registerService(BrokerServiceRunner.class,
+<<<<<<< 02df7854124d447fb8bbb606a84f7e45cae02e62
                                        new BrokerServiceRunner(microservicesRunner, authManager.getAuthenticator()));
+=======
+                                       new BrokerServiceRunner(microservicesRunner, authManager));
+>>>>>>> Secure admin services using basic authentication
         haStrategy = startupContext.getService(HaStrategy.class);
         if (haStrategy == null) {
             brokerRestRunnerHelper = new BrokerRestRunnerHelper();
