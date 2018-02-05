@@ -21,6 +21,7 @@ package org.wso2.broker.core.rest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wso2.broker.auth.exception.BrokerAuthException;
 import org.wso2.broker.common.ValidationException;
 import org.wso2.broker.core.Broker;
 import org.wso2.broker.core.BrokerException;
@@ -37,6 +38,7 @@ import java.util.List;
 import java.util.Objects;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
@@ -74,6 +76,8 @@ public class ExchangesApiDelegate {
             String message = "Error occurred while creating exchange.";
             LOGGER.error(message, e);
             throw new InternalServerErrorException(message, e);
+        } catch (BrokerAuthException e) {
+            throw new NotAuthorizedException(e.getMessage(), e);
         }
     }
 
@@ -90,6 +94,8 @@ public class ExchangesApiDelegate {
             throw new InternalServerErrorException(message, e);
         } catch (ValidationException e) {
             throw new BadRequestException(e.getMessage(), e);
+        } catch (BrokerAuthException e) {
+            throw new NotAuthorizedException(e.getMessage(), e);
         }
     }
 

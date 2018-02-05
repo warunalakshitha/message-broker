@@ -21,6 +21,9 @@ package org.wso2.broker.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wso2.broker.auth.AuthManager;
+import org.wso2.broker.auth.authorization.handler.AuthorizationHandler;
+import org.wso2.broker.auth.exception.BrokerAuthException;
 import org.wso2.broker.common.BrokerConfigProvider;
 import org.wso2.broker.common.ResourceNotFoundException;
 import org.wso2.broker.common.StartupContext;
@@ -77,7 +80,9 @@ public final class Broker {
                                                                                         BrokerConfiguration.class);
         DataSource dataSource = startupContext.getService(DataSource.class);
         StoreFactory storeFactory = new StoreFactory(dataSource, metricManager, configuration);
-        this.messagingEngine = new MessagingEngine(storeFactory, metricManager);
+        AuthorizationHandler authorizationHandler =
+                new AuthorizationHandler(startupContext.getService(AuthManager.class));
+        this.messagingEngine = new MessagingEngine(storeFactory, metricManager, authorizationHandler);
         BrokerServiceRunner serviceRunner = startupContext.getService(BrokerServiceRunner.class);
         serviceRunner.deploy(new QueuesApi(this), new ExchangesApi(this));
         startupContext.registerService(Broker.class, this);
@@ -90,7 +95,8 @@ public final class Broker {
         }
     }
 
-    public void publish(Message message) throws BrokerException {
+    public void publish(Message message)
+            throws BrokerException, BrokerAuthException {
         messagingEngine.publish(message);
         metricManager.markPublish();
     }
@@ -111,7 +117,8 @@ public final class Broker {
      * @param consumer {@link Consumer} implementation
      * @throws BrokerException throws {@link BrokerException} if unable to add the consumer
      */
-    public void addConsumer(Consumer consumer) throws BrokerException {
+    public void addConsumer(Consumer consumer)
+            throws BrokerException, BrokerAuthException {
         messagingEngine.consume(consumer);
     }
 
@@ -120,37 +127,40 @@ public final class Broker {
     }
 
     public void declareExchange(String exchangeName, String type,
-                                boolean passive, boolean durable) throws BrokerException, ValidationException {
+                                boolean passive, boolean durable)
+            throws BrokerException, ValidationException, BrokerAuthException {
         messagingEngine.declareExchange(exchangeName, type, passive, durable);
     }
 
-    public void createExchange(String exchangeName, String type, boolean durable) throws BrokerException,
-                                                                                         ValidationException {
+    public void createExchange(String exchangeName, String type, boolean durable)
+            throws BrokerException, ValidationException, BrokerAuthException {
         messagingEngine.createExchange(exchangeName, type, durable);
     }
 
-    public boolean deleteExchange(String exchangeName, boolean ifUnused) throws BrokerException, ValidationException {
+    public boolean deleteExchange(String exchangeName, boolean ifUnused)
+            throws BrokerException, ValidationException, BrokerAuthException {
         return messagingEngine.deleteExchange(exchangeName, ifUnused);
     }
 
     public boolean createQueue(String queueName, boolean passive,
-                               boolean durable, boolean autoDelete) throws BrokerException, ValidationException {
+                               boolean durable, boolean autoDelete)
+            throws BrokerException, ValidationException, BrokerAuthException {
         return messagingEngine.createQueue(queueName, passive, durable, autoDelete);
     }
 
-    public int deleteQueue(String queueName, boolean ifUnused, boolean ifEmpty) throws BrokerException,
-                                                                                           ValidationException,
-                                                                                           ResourceNotFoundException {
+    public int deleteQueue(String queueName, boolean ifUnused, boolean ifEmpty)
+            throws BrokerException, ValidationException, ResourceNotFoundException, BrokerAuthException {
         return messagingEngine.deleteQueue(queueName, ifUnused, ifEmpty);
     }
 
     public void bind(String queueName, String exchangeName,
-                     String routingKey, FieldTable arguments) throws BrokerException, ValidationException {
+                     String routingKey, FieldTable arguments)
+            throws BrokerException, BrokerAuthException, ValidationException {
         messagingEngine.bind(queueName, exchangeName, routingKey, arguments);
     }
 
     public void unbind(String queueName, String exchangeName, String routingKey)
-            throws BrokerException, ValidationException {
+            throws BrokerException, BrokerAuthException, ValidationException {
         messagingEngine.unbind(queueName, exchangeName, routingKey);
     }
 

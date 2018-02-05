@@ -21,12 +21,17 @@ package org.wso2.broker.amqp.codec.frames;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.util.Attribute;
+import io.netty.util.AttributeKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wso2.broker.amqp.codec.AmqpChannel;
 import org.wso2.broker.amqp.codec.BlockingTask;
 import org.wso2.broker.amqp.codec.ChannelException;
 import org.wso2.broker.amqp.codec.handlers.AmqpConnectionHandler;
+import org.wso2.broker.auth.AuthManager;
+import org.wso2.broker.auth.BrokerAuthConstants;
+import org.wso2.broker.auth.exception.BrokerAuthException;
 import org.wso2.broker.common.ValidationException;
 import org.wso2.broker.common.data.types.FieldTable;
 import org.wso2.broker.common.data.types.ShortString;
@@ -81,24 +86,31 @@ public class QueueBind extends MethodFrame {
     @Override
     public void handle(ChannelHandlerContext ctx, AmqpConnectionHandler connectionHandler) {
         AmqpChannel channel = connectionHandler.getChannel(getChannel());
-
         ctx.fireChannelRead((BlockingTask) () -> {
-            try {
-                channel.bind(queue, exchange, routingKey, arguments);
-                ctx.writeAndFlush(new QueueBindOk(getChannel()));
+            Attribute<String> authorizationId =
+                    ctx.channel().attr(AttributeKey.valueOf(BrokerAuthConstants.AUTHENTICATION_ID));
+            AuthManager.doAuthContextAwareFunction(authorizationId.get(), () -> {
+                try {
+                    channel.bind(queue, exchange, routingKey, arguments);
+                    ctx.writeAndFlush(new QueueBindOk(getChannel()));
 
-            } catch (BrokerException | ValidationException e) {
-                LOGGER.error("Error while binding to {} with queue {} with routing key {} "
-                        , exchange, queue, routingKey, e);
-                ctx.writeAndFlush(new ChannelClose(getChannel(),
-                                                   ChannelException.NOT_ALLOWED,
-                                                   ShortString.parseString(e.getMessage()),
-                                                   CLASS_ID,
-                                                   METHOD_ID));
-            }
-
+                } catch (BrokerException | ValidationException e) {
+                    LOGGER.error("Error while binding to {} with queue {} with routing key {} "
+                            , exchange, queue, routingKey, e);
+                    ctx.writeAndFlush(new ChannelClose(getChannel(),
+                                                       ChannelException.NOT_ALLOWED,
+                                                       ShortString.parseString(e.getMessage()),
+                                                       CLASS_ID,
+                                                       METHOD_ID));
+                } catch (BrokerAuthException e) {
+                    ctx.writeAndFlush(new ChannelClose(getChannel(),
+                                                       ChannelException.ACCESS_REFUSED,
+                                                       ShortString.parseString(e.getMessage()),
+                                                       CLASS_ID,
+                                                       METHOD_ID));
+                }
+            });
         });
-
     }
 
     /**

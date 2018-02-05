@@ -16,23 +16,20 @@
  *   under the License.
  *
  */
-package org.wso2.broker.auth;
-
-import javax.security.auth.login.LoginException;
+package org.wso2.broker.auth.exception;
 
 /**
  * This Exception class represents login failures.
  */
-public class BrokerAuthException extends LoginException {
+public class BrokerAuthDuplicateException extends Exception {
 
-    private static final long serialVersionUID = 1414511165553802816L;
+    private static final long serialVersionUID = -798841825247224307L;
 
-    public BrokerAuthException(String message) {
+    public BrokerAuthDuplicateException(String message) {
         super(message);
     }
 
-    public BrokerAuthException(String message, Throwable throwable) {
-        super(message);
-        initCause(throwable);
+    public BrokerAuthDuplicateException(String message, Throwable throwable) {
+        super(message, throwable);
     }
 }

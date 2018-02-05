@@ -21,6 +21,8 @@ package org.wso2.broker.amqp.codec;
 
 import io.netty.buffer.ByteBuf;
 import org.wso2.broker.amqp.AmqpException;
+import org.wso2.broker.auth.exception.BrokerAuthException;
+import org.wso2.broker.common.ValidationException;
 import org.wso2.broker.common.data.types.FieldTable;
 import org.wso2.broker.common.data.types.FieldValue;
 import org.wso2.broker.common.data.types.ShortString;
@@ -101,7 +103,7 @@ public class InMemoryMessageAggregator {
         receivedPayloadSize = 0;
     }
 
-    public void publish(Message message) throws BrokerException {
+    public void publish(Message message) throws BrokerException, ValidationException, BrokerAuthException {
         MessageTracer.trace(message, PUBLISH_MESSAGE);
         broker.publish(message);
     }

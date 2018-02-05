@@ -26,7 +26,7 @@ public class UserConfig {
 
     private String password = null;
 
-    private List<String> roles = null;
+    private List<String> groups = null;
 
     public String getUsername() {
         return username;
@@ -44,11 +44,11 @@ public class UserConfig {
         this.password = password;
     }
 
-    public List<String> getRoles() {
-        return roles;
+    public List<String> getGroups() {
+        return groups;
     }
 
-    public void setRoles(List<String> roles) {
-        this.roles = roles;
+    public void setGroups(List<String> groups) {
+        this.groups = groups;
     }
 }

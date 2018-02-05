@@ -20,6 +20,7 @@
 package org.wso2.broker.core.rest;
 
 import com.google.common.base.Strings;
+import org.wso2.broker.auth.exception.BrokerAuthException;
 import org.wso2.broker.common.ValidationException;
 import org.wso2.broker.common.data.types.FieldTable;
 import org.wso2.broker.common.data.types.FieldValue;
@@ -43,6 +44,7 @@ import java.util.Map;
 import java.util.Objects;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.core.Response;
 
 /**
@@ -79,6 +81,8 @@ public class BindingsApiDelegate {
         } catch (URISyntaxException | UnsupportedEncodingException e) {
             throw new InternalServerErrorException("Error occurred while creating location header for the "
                                                            + "created binding.", e);
+        } catch (BrokerAuthException e) {
+            throw new NotAuthorizedException(e.getMessage(), e);
         }
     }
 

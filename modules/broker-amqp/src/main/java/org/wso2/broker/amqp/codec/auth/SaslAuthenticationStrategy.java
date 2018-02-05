@@ -24,6 +24,7 @@ import org.wso2.broker.amqp.codec.frames.ConnectionSecure;
 import org.wso2.broker.amqp.codec.frames.ConnectionTune;
 import org.wso2.broker.amqp.codec.handlers.AmqpConnectionHandler;
 import org.wso2.broker.auth.AuthManager;
+import org.wso2.broker.auth.BrokerAuthConstants;
 import org.wso2.broker.common.data.types.LongString;
 import org.wso2.broker.common.data.types.ShortString;
 import org.wso2.broker.core.BrokerException;
@@ -53,6 +54,8 @@ public class SaslAuthenticationStrategy implements AuthenticationStrategy {
                     .createSaslServer(connectionHandler.getConfiguration().getHostName(), mechanism.toString());
             byte[] challenge = saslServer.evaluateResponse(response.getBytes());
             if (saslServer.isComplete()) {
+                ctx.channel().attr(AttributeKey.valueOf(BrokerAuthConstants.AUTHENTICATION_ID))
+                   .set(saslServer.getAuthorizationID());
                 ctx.writeAndFlush(new ConnectionTune(256, 65535, 0));
             } else {
                 ctx.channel().attr(AttributeKey.valueOf(SASL_SERVER_ATTRIBUTE)).set(saslServer);

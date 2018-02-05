@@ -39,12 +39,12 @@ public class UsersFileTest {
         UserConfig user1 = new UserConfig();
         user1.setUsername("test1");
         user1.setPassword("testPassword1");
-        user1.setRoles(Arrays.asList("role1", "role2"));
+        user1.setGroups(Arrays.asList("role1", "role2"));
 
         UserConfig user2 = new UserConfig();
         user2.setUsername("test2");
         user2.setPassword("testPassword2");
-        user2.setRoles(Arrays.asList("role1", "role3", "role4"));
+        user2.setGroups(Arrays.asList("role1", "role3", "role4"));
 
         usersFile.setUserConfigs(Arrays.asList(user1, user2));
     }
@@ -58,10 +58,10 @@ public class UsersFileTest {
         UserConfig user2 = userList.get(1);
         Assert.assertEquals(user1.getUsername(), "test1", "Test1 username is incorrect");
         Assert.assertEquals(user1.getPassword(), "testPassword1", "Test1 password is incorrect");
-        Assert.assertEquals(user1.getRoles().size(), 2, "Test1 role list count is incorrect");
+        Assert.assertEquals(user1.getGroups().size(), 2, "Test1 role list count is incorrect");
         Assert.assertEquals(user2.getUsername(), "test2", "Test2 username is incorrect");
         Assert.assertEquals(user2.getPassword(), "testPassword2", "Test2 password is incorrect");
-        Assert.assertEquals(user2.getRoles().size(), 3, "Test2 role list count is incorrect");
+        Assert.assertEquals(user2.getGroups().size(), 3, "Test2 role list count is incorrect");
 
     }
 }

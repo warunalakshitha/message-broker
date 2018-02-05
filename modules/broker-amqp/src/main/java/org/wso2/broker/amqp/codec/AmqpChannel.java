@@ -28,6 +28,7 @@ import org.wso2.broker.amqp.AmqpDeliverMessage;
 import org.wso2.broker.amqp.AmqpServerConfiguration;
 import org.wso2.broker.amqp.codec.flow.ChannelFlowManager;
 import org.wso2.broker.amqp.metrics.AmqpMetricManager;
+import org.wso2.broker.auth.exception.BrokerAuthException;
 import org.wso2.broker.common.ValidationException;
 import org.wso2.broker.common.data.types.FieldTable;
 import org.wso2.broker.common.data.types.ShortString;
@@ -140,31 +141,36 @@ public class AmqpChannel {
     }
 
     public void declareExchange(String exchangeName, String exchangeType,
-                                boolean passive, boolean durable) throws BrokerException, ValidationException {
+                                boolean passive, boolean durable)
+            throws BrokerException, ValidationException, BrokerAuthException {
         broker.declareExchange(exchangeName, exchangeType, passive, durable);
     }
 
-    public void deleteExchange(String exchangeName, boolean ifUnused) throws BrokerException, ValidationException {
+    public void deleteExchange(String exchangeName, boolean ifUnused)
+            throws BrokerException, ValidationException, BrokerAuthException {
         broker.deleteExchange(exchangeName, ifUnused);
     }
 
     public void declareQueue(ShortString queue, boolean passive,
-                             boolean durable, boolean autoDelete) throws BrokerException, ValidationException {
+                             boolean durable, boolean autoDelete)
+            throws BrokerException, ValidationException, BrokerAuthException {
         broker.createQueue(queue.toString(), passive, durable, autoDelete);
     }
 
     public void bind(ShortString queue, ShortString exchange,
-                     ShortString routingKey, FieldTable arguments) throws BrokerException, ValidationException {
+                     ShortString routingKey, FieldTable arguments)
+            throws BrokerException, ValidationException, BrokerAuthException {
         broker.bind(queue.toString(), exchange.toString(), routingKey.toString(), arguments);
     }
 
     public void unbind(ShortString queue, ShortString exchange, ShortString routingKey)
-            throws BrokerException, ValidationException {
+            throws BrokerException, ValidationException, BrokerAuthException {
         broker.unbind(queue.toString(), exchange.toString(), routingKey.toString());
     }
 
     public ShortString consume(ShortString queueName, ShortString consumerTag, boolean exclusive,
-                               ChannelHandlerContext ctx) throws BrokerException {
+                               ChannelHandlerContext ctx)
+            throws BrokerException, ValidationException, BrokerAuthException {
         ShortString tag = consumerTag;
         if (tag.isEmpty()) {
             tag = ShortString.parseString("sgen" + getNextConsumerTag());

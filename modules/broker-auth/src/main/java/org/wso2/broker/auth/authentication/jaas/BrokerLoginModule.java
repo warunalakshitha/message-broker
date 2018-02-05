@@ -20,7 +20,7 @@ package org.wso2.broker.auth.authentication.jaas;
 
 import com.sun.security.auth.UserPrincipal;
 import org.wso2.broker.auth.BrokerAuthConstants;
-import org.wso2.broker.auth.BrokerAuthException;
+import org.wso2.broker.auth.exception.BrokerAuthException;
 import org.wso2.broker.auth.user.impl.UserStoreManagerImpl;
 
 import java.io.IOException;

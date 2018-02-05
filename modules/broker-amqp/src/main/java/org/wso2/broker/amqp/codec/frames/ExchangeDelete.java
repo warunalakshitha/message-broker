@@ -21,10 +21,15 @@ package org.wso2.broker.amqp.codec.frames;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.util.Attribute;
+import io.netty.util.AttributeKey;
 import org.wso2.broker.amqp.codec.AmqpChannel;
 import org.wso2.broker.amqp.codec.BlockingTask;
 import org.wso2.broker.amqp.codec.ChannelException;
 import org.wso2.broker.amqp.codec.handlers.AmqpConnectionHandler;
+import org.wso2.broker.auth.AuthManager;
+import org.wso2.broker.auth.BrokerAuthConstants;
+import org.wso2.broker.auth.exception.BrokerAuthException;
 import org.wso2.broker.common.ValidationException;
 import org.wso2.broker.common.data.types.ShortString;
 import org.wso2.broker.core.BrokerException;
@@ -69,22 +74,32 @@ public class ExchangeDelete extends MethodFrame {
     public void handle(ChannelHandlerContext ctx, AmqpConnectionHandler connectionHandler) {
         AmqpChannel channel = connectionHandler.getChannel(getChannel());
         ctx.fireChannelRead((BlockingTask) () -> {
-            try {
-                channel.deleteExchange(exchange.toString(), ifUnused);
-                ctx.writeAndFlush(new ExchangeDeleteOk(getChannel()));
-            } catch (BrokerException e) {
-                ctx.writeAndFlush(new ChannelClose(getChannel(),
-                                                   ChannelException.NOT_ALLOWED,
-                                                   ShortString.parseString(e.getMessage()),
-                                                   CLASS_ID,
-                                                   METHOD_ID));
-            } catch (ValidationException e) {
-                ctx.writeAndFlush(new ChannelClose(getChannel(),
-                                                   ChannelException.PRECONDITION_FAILED,
-                                                   ShortString.parseString(e.getMessage()),
-                                                   CLASS_ID,
-                                                   METHOD_ID));
-            }
+            Attribute<String> authorizationId =
+                    ctx.channel().attr(AttributeKey.valueOf(BrokerAuthConstants.AUTHENTICATION_ID));
+            AuthManager.doAuthContextAwareFunction(authorizationId.get(), () -> {
+                try {
+                    channel.deleteExchange(exchange.toString(), ifUnused);
+                    ctx.writeAndFlush(new ExchangeDeleteOk(getChannel()));
+                } catch (BrokerException e) {
+                    ctx.writeAndFlush(new ChannelClose(getChannel(),
+                                                       ChannelException.NOT_ALLOWED,
+                                                       ShortString.parseString(e.getMessage()),
+                                                       CLASS_ID,
+                                                       METHOD_ID));
+                } catch (ValidationException e) {
+                    ctx.writeAndFlush(new ChannelClose(getChannel(),
+                                                       ChannelException.PRECONDITION_FAILED,
+                                                       ShortString.parseString(e.getMessage()),
+                                                       CLASS_ID,
+                                                       METHOD_ID));
+                } catch (BrokerAuthException e) {
+                    ctx.writeAndFlush(new ChannelClose(getChannel(),
+                                                       ChannelException.ACCESS_REFUSED,
+                                                       ShortString.parseString(e.getMessage()),
+                                                       CLASS_ID,
+                                                       METHOD_ID));
+                }
+            });
         });
     }
 

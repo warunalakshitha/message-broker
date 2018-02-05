@@ -31,12 +31,12 @@ public class User {
 
     private char[] password;
 
-    private Set<String> roles;
+    private Set<String> groups;
 
-    public User(String username, char[] password, Set<String> roles) {
+    public User(String username, char[] password, Set<String> groups) {
         this.username = username;
         this.password = Arrays.copyOf(password, password.length);
-        this.roles = Collections.unmodifiableSet(roles);
+        this.groups = Collections.unmodifiableSet(groups);
     }
 
     public String getUsername() {
@@ -47,7 +47,7 @@ public class User {
         return Arrays.copyOf(password, password.length);
     }
 
-    public Set<String> getRoles() {
-        return roles;
+    public Set<String> getGroups() {
+        return groups;
     }
 }

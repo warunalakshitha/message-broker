@@ -16,9 +16,8 @@
 
 wso2.broker.users:
  users:
- -
-   username: admin
+ - username: admin
    password: admin
-   roles:
+   groups:
    - admin
 

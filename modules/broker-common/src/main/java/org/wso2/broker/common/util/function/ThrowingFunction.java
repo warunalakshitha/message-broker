@@ -1,4 +1,5 @@
 /*
+<<<<<<< 3e35a871c9e7da45a7f2a538d32fc9f58a63d336
  * Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,

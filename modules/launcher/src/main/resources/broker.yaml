@@ -35,10 +35,21 @@ wso2.broker.auth:
  authentication:
   # Enable the authentication
   enabled: true
-  jaas:
-   # JAAS login module used to authenticate users
-   loginModule: org.wso2.broker.auth.authentication.jaas.BrokerLoginModule
+  authenticator:
+    # Authenticator implemetation
+    className: org.wso2.broker.auth.authentication.authenticator.impl.JaasAuthenticator
+    # Optional properties
+    properties:
+     loginModule: org.wso2.broker.auth.authentication.jaas.FileBasedLoginModule
 
+# Broker authorization related configurations.
+ authorization:
+  # Enable the authorization
+  enabled: true
+  authProvider:
+   # AuthProvider implemetation
+   className: org.wso2.broker.auth.authorization.authProvider.file.FileBasedUserStoreAuthorizer
+   properties:
 # AMQP transport related configurations.
 wso2.broker.transport.amqp:
  # Hostname configuration used in creating the server socket

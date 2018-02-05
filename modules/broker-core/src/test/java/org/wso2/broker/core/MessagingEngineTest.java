@@ -19,11 +19,14 @@
 
 package org.wso2.broker.core;
 
+import org.mockito.Mockito;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import org.wso2.broker.auth.authorization.handler.AuthorizationHandler;
+import org.wso2.broker.auth.exception.BrokerAuthException;
 import org.wso2.broker.common.ResourceNotFoundException;
 import org.wso2.broker.common.ValidationException;
 import org.wso2.broker.common.data.types.FieldTable;
@@ -48,23 +51,26 @@ public class MessagingEngineTest {
         DataSource dataSource = DbUtil.getDataSource();
         NullBrokerMetricManager metricManager = new NullBrokerMetricManager();
         StoreFactory storeFactory = new StoreFactory(dataSource, metricManager, new BrokerConfiguration());
-        messagingEngine = new MessagingEngine(storeFactory, metricManager);
+        AuthorizationHandler authorizationHandler = Mockito.mock(AuthorizationHandler.class);
+
+        messagingEngine = new MessagingEngine(storeFactory, metricManager, authorizationHandler);
     }
 
     @BeforeMethod
-    public void setup() throws BrokerException, ValidationException {
+    public void setup() throws BrokerException, ValidationException, BrokerAuthException {
         messagingEngine.createQueue(DEFAULT_QUEUE_NAME, false, false, false);
         messagingEngine.bind(DEFAULT_QUEUE_NAME, DEFAULT_EXCHANGE_NAME, DEFAULT_ROUTING_KEY, FieldTable.EMPTY_TABLE);
     }
 
     @AfterMethod
-    public void tearDown() throws BrokerException, ValidationException {
+    public void tearDown() throws BrokerException, ValidationException, BrokerAuthException {
         messagingEngine.unbind(DEFAULT_QUEUE_NAME, DEFAULT_EXCHANGE_NAME, DEFAULT_ROUTING_KEY);
 
     }
 
     @Test (description = "Test multiple identical binding calls for the same queue. This shouldn't throw any errors")
-    public void testMultipleIdenticalBindingsForTheSameQueue() throws BrokerException, ValidationException {
+    public void testMultipleIdenticalBindingsForTheSameQueue()
+            throws BrokerException, ValidationException, BrokerAuthException {
         messagingEngine.bind(DEFAULT_QUEUE_NAME, DEFAULT_EXCHANGE_NAME, DEFAULT_ROUTING_KEY, FieldTable.EMPTY_TABLE);
         messagingEngine.bind(DEFAULT_QUEUE_NAME, DEFAULT_EXCHANGE_NAME, DEFAULT_ROUTING_KEY, FieldTable.EMPTY_TABLE);
     }
@@ -85,14 +91,14 @@ public class MessagingEngineTest {
             , description = "Test multiple bind operation for the same queue with identical bindings"
             , expectedExceptions = ValidationException.class)
     public void testNegativeUnbindWithNonExistingExchangeTest(String exchangeName)
-            throws BrokerException, ValidationException {
+            throws BrokerException, ValidationException, BrokerAuthException {
         messagingEngine.unbind(DEFAULT_QUEUE_NAME, exchangeName, DEFAULT_ROUTING_KEY);
     }
 
     @Test (dataProvider = "nonExistingQueues", description = "Test unbind operation with non existing queues"
             , expectedExceptions = ValidationException.class)
     public void testNegativeUnbindWithNonExistingQueueTest(String queueName) throws BrokerException,
-                                                                                    ValidationException {
+            ValidationException, BrokerAuthException {
         messagingEngine.unbind(queueName, DEFAULT_EXCHANGE_NAME, DEFAULT_ROUTING_KEY);
     }
 
@@ -100,14 +106,14 @@ public class MessagingEngineTest {
            description = "Test non existing queue delete.",
            expectedExceptions = {ResourceNotFoundException.class})
     public void testNonExistingQueueDelete(String queueName) throws BrokerException,
-                                                                    ResourceNotFoundException,
-                                                                    ValidationException {
+            ResourceNotFoundException, ValidationException, BrokerAuthException {
         messagingEngine.deleteQueue(queueName, false, false);
     }
 
     @Test (dataProvider = "nonExistingExchanges",
             description = "Test non existing exchange delete. This shouldn't throw an exception")
-    public void testNonExistingExchangeDelete(String exchangeName) throws BrokerException, ValidationException {
+    public void testNonExistingExchangeDelete(String exchangeName)
+            throws BrokerException, ValidationException, BrokerAuthException {
         messagingEngine.deleteExchange(exchangeName, false);
     }
 

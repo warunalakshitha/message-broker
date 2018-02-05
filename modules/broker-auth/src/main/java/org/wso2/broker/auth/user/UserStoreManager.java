@@ -18,7 +18,8 @@
  */
 package org.wso2.broker.auth.user;
 
-import org.wso2.broker.auth.BrokerAuthException;
+import org.wso2.broker.auth.exception.BrokerAuthException;
+import org.wso2.broker.common.StartupContext;
 
 import java.util.Set;
 
@@ -26,6 +27,13 @@ import java.util.Set;
  * Interface provides user store operations required for broker.
  */
 public interface UserStoreManager {
+
+    /**
+     * Initiate user store connector with startup context.
+     *
+     * @param startupContext the startup context provides registered services for user store connector functionality.
+     */
+    void initialize(StartupContext startupContext) throws Exception;
 
     /**
      * Authenticate given user with credentials.

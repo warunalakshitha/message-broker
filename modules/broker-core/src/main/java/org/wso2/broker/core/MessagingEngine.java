@@ -22,9 +22,16 @@ package org.wso2.broker.core;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wso2.broker.auth.authorization.enums.ResourceActions;
+import org.wso2.broker.auth.authorization.enums.ResourceAuthScopes;
+import org.wso2.broker.auth.authorization.enums.ResourceTypes;
+import org.wso2.broker.auth.authorization.handler.AuthorizationHandler;
+import org.wso2.broker.auth.exception.BrokerAuthException;
 import org.wso2.broker.common.ResourceNotFoundException;
 import org.wso2.broker.common.ValidationException;
 import org.wso2.broker.common.data.types.FieldTable;
+import org.wso2.broker.common.util.function.ThrowingConsumer;
+import org.wso2.broker.common.util.function.ThrowingRunnable;
 import org.wso2.broker.core.metrics.BrokerMetricManager;
 import org.wso2.broker.core.store.SharedMessageStore;
 import org.wso2.broker.core.store.StoreFactory;
@@ -89,9 +96,12 @@ final class MessagingEngine {
      */
     private final BrokerMetricManager metricManager;
 
-    MessagingEngine(StoreFactory storeFactory, BrokerMetricManager metricManager)
+    private final AuthorizationHandler authHandler;
+
+    MessagingEngine(StoreFactory storeFactory, BrokerMetricManager metricManager, AuthorizationHandler authHandler)
             throws BrokerException, ValidationException {
         this.metricManager = metricManager;
+        this.authHandler = authHandler;
         exchangeRegistry = storeFactory.getExchangeRegistry();
         // TODO: get the buffer sizes from configs
         sharedMessageStore = storeFactory.getSharedMessageStore(32768, 1024);
@@ -107,15 +117,34 @@ final class MessagingEngine {
     }
 
     private void initDefaultDeadLetterQueue() throws BrokerException, ValidationException {
-        createQueue(DEFAULT_DEAD_LETTER_QUEUE, false, true, false);
-        bind(DEFAULT_DEAD_LETTER_QUEUE,
-             ExchangeRegistry.DEFAULT_DEAD_LETTER_EXCHANGE,
-             DEFAULT_DEAD_LETTER_QUEUE,
-             FieldTable.EMPTY_TABLE);
+        try {
+            createQueue(DEFAULT_DEAD_LETTER_QUEUE, false, true, false, () -> {
+            }, () -> {
+            });
+            bind(DEFAULT_DEAD_LETTER_QUEUE,
+                 ExchangeRegistry.DEFAULT_DEAD_LETTER_EXCHANGE,
+                 DEFAULT_DEAD_LETTER_QUEUE,
+                 FieldTable.EMPTY_TABLE, exchange -> {
+                    }, queueHandler -> {
+                    });
+        } catch (BrokerAuthException e) {
+            throw new BrokerException("Auth error while initializing dead letter queue", e);
+        }
     }
 
     void bind(String queueName, String exchangeName, String routingKey, FieldTable arguments)
-            throws BrokerException, ValidationException {
+            throws BrokerAuthException, BrokerException, ValidationException {
+        bind(queueName, exchangeName, routingKey, arguments, exchange -> {
+            authHandler.handle(ResourceTypes.EXCHANGE, exchange.getName(), ResourceActions.BIND);
+        }, queueHandler -> {
+            authHandler.handle(ResourceTypes.QUEUE, queueName, ResourceActions.BIND);
+        });
+    }
+
+    private void bind(String queueName, String exchangeName, String routingKey, FieldTable arguments,
+                      ThrowingConsumer<Exchange, BrokerAuthException> exchangeAuthorizer,
+                      ThrowingConsumer<QueueHandler, BrokerAuthException> queueAuthorizer)
+            throws BrokerException, ValidationException, BrokerAuthException {
 
         lock.writeLock().lock();
         try {
@@ -130,6 +159,8 @@ final class MessagingEngine {
             }
 
             if (!routingKey.isEmpty()) {
+                exchangeAuthorizer.accept(exchange);
+                queueAuthorizer.accept(queueHandler);
                 exchange.bind(queueHandler, routingKey, arguments);
             }
         } finally {
@@ -137,7 +168,8 @@ final class MessagingEngine {
         }
     }
 
-    void unbind(String queueName, String exchangeName, String routingKey) throws BrokerException, ValidationException {
+    void unbind(String queueName, String exchangeName, String routingKey)
+            throws BrokerException, ValidationException, BrokerAuthException {
         lock.writeLock().lock();
         try {
             Exchange exchange = exchangeRegistry.getExchange(exchangeName);
@@ -150,7 +182,12 @@ final class MessagingEngine {
             if (queueHandler == null) {
                 throw new ValidationException("Unknown queue name: " + queueName);
             }
-
+            authHandler.handle(ResourceTypes.QUEUE, queueName,
+                               ResourceActions.UNBIND);
+            if (!exchange.getName().equals(exchangeRegistry.getDefaultExchange().getName())) {
+                authHandler.handle(ResourceTypes.EXCHANGE, exchange.getName(),
+                                   ResourceActions.UNBIND);
+            }
             exchange.unbind(queueHandler.getQueue(), routingKey);
         } finally {
             lock.writeLock().unlock();
@@ -158,11 +195,23 @@ final class MessagingEngine {
     }
 
     boolean createQueue(String queueName, boolean passive, boolean durable, boolean autoDelete)
-            throws BrokerException, ValidationException {
+            throws BrokerException, ValidationException, BrokerAuthException {
+        return createQueue(queueName, passive, durable, autoDelete,
+                           () -> authHandler.handle(ResourceAuthScopes.QUEUES_CREATE),
+                           () -> authHandler.createAuthResource(ResourceTypes.QUEUE, queueName, durable));
+    }
+
+    private boolean createQueue(String queueName, boolean passive, boolean durable, boolean autoDelete,
+                                ThrowingRunnable<BrokerAuthException> queueAuthorizer,
+                                ThrowingRunnable<BrokerAuthException> authResourceCreator)
+            throws BrokerException, BrokerAuthException, ValidationException {
+
         lock.writeLock().lock();
         try {
+            queueAuthorizer.run();
             boolean queueAdded = queueRegistry.addQueue(queueName, passive, durable, autoDelete);
             if (queueAdded) {
+                authResourceCreator.run();
                 QueueHandler queueHandler = queueRegistry.getQueueHandler(queueName);
                 // We need to bind every queue to the default exchange
                 exchangeRegistry.getDefaultExchange().bind(queueHandler, queueName, FieldTable.EMPTY_TABLE);
@@ -173,12 +222,26 @@ final class MessagingEngine {
         }
     }
 
-    void publish(Message message) throws BrokerException {
+    void publish(Message message) throws BrokerException, BrokerAuthException {
+        publish(message, exchange -> {
+            authHandler.handle(ResourceTypes.EXCHANGE, exchange.getName(),
+                               ResourceActions.PUBLISH);
+        }, queue -> {
+            authHandler.handle(ResourceTypes.QUEUE, queue.getName(),
+                               ResourceActions.PUBLISH);
+        });
+    }
+
+    private void publish(Message message,
+                         ThrowingConsumer<Exchange, BrokerAuthException> exchangeAuthorizer,
+                         ThrowingConsumer<Queue, BrokerAuthException> queueAuthorizer)
+            throws BrokerException, BrokerAuthException {
         lock.readLock().lock();
         try {
             Metadata metadata = message.getMetadata();
             Exchange exchange = exchangeRegistry.getExchange(metadata.getExchangeName());
             if (exchange != null) {
+                exchangeAuthorizer.accept(exchange);
                 String routingKey = metadata.getRoutingKey();
                 BindingSet bindingSet = exchange.getBindingsForRoute(routingKey);
 
@@ -192,11 +255,13 @@ final class MessagingEngine {
                         sharedMessageStore.add(message);
                         Set<String> uniqueQueues = new HashSet<>();
                         for (Binding binding : bindingSet.getUnfilteredBindings()) {
+                            queueAuthorizer.accept(binding.getQueue());
                             uniqueQueues.add(binding.getQueue().getName());
                         }
 
                         for (Binding binding : bindingSet.getFilteredBindings()) {
                             if (binding.getFilterExpression().evaluate(metadata)) {
+                                queueAuthorizer.accept(binding.getQueue());
                                 uniqueQueues.add(binding.getQueue().getName());
                             }
                         }
@@ -248,17 +313,24 @@ final class MessagingEngine {
     }
 
     int deleteQueue(String queueName, boolean ifUnused, boolean ifEmpty) throws BrokerException,
-                                                                                ValidationException,
-                                                                                ResourceNotFoundException {
+            ValidationException,
+            ResourceNotFoundException, BrokerAuthException {
         lock.writeLock().lock();
         try {
-            return queueRegistry.removeQueue(queueName, ifUnused, ifEmpty);
+            QueueHandler queueHandler = queueRegistry.getQueueHandler(queueName);
+            if (Objects.nonNull(queueHandler) && Objects.nonNull(queueHandler.getQueue())) {
+                authHandler.handle(ResourceTypes.QUEUE, queueName,
+                                   ResourceActions.DELETE);
+            }
+            int removeQueue = queueRegistry.removeQueue(queueName, ifUnused, ifEmpty);
+            authHandler.deleteAuthResource(ResourceTypes.QUEUE, queueName);
+            return removeQueue;
         } finally {
             lock.writeLock().unlock();
         }
     }
 
-    void consume(Consumer consumer) throws BrokerException {
+    void consume(Consumer consumer) throws BrokerException, BrokerAuthException {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Consume request received for {}", consumer.getQueueName());
         }
@@ -266,6 +338,9 @@ final class MessagingEngine {
         try {
             QueueHandler queueHandler = queueRegistry.getQueueHandler(consumer.getQueueName());
             if (queueHandler != null) {
+                authHandler.handle(ResourceTypes.QUEUE,
+                                   consumer.getQueueName(),
+                                   ResourceActions.CONSUME);
                 synchronized (queueHandler) {
                     if (queueHandler.addConsumer(consumer) && queueHandler.consumerCount() == 1) {
                         deliveryTaskService.add(new MessageDeliveryTask(queueHandler));
@@ -273,7 +348,7 @@ final class MessagingEngine {
                 }
             } else {
                 throw new BrokerException("Cannot add consumer. Queue [ " + consumer.getQueueName() + " ] "
-                                          + "not found. Create the queue before attempting to consume.");
+                                                  + "not found. Create the queue before attempting to consume.");
             }
         } finally {
             lock.readLock().unlock();
@@ -289,29 +364,48 @@ final class MessagingEngine {
     }
 
     void declareExchange(String exchangeName, String type,
-                         boolean passive, boolean durable) throws BrokerException, ValidationException {
+                         boolean passive, boolean durable)
+            throws BrokerException, ValidationException, BrokerAuthException {
         lock.writeLock().lock();
         try {
+            authHandler.handle(ResourceAuthScopes.EXCHANGES_CREATE);
             exchangeRegistry.declareExchange(exchangeName, type, passive, durable);
+            if (!passive) {
+                authHandler.createAuthResource(ResourceTypes.EXCHANGE, exchangeName, durable);
+            }
         } finally {
             lock.writeLock().unlock();
         }
     }
 
     void createExchange(String exchangeName, String type, boolean durable) throws BrokerException,
-                                                                                  ValidationException {
+            ValidationException, BrokerAuthException {
         lock.writeLock().lock();
         try {
+            authHandler.handle(ResourceAuthScopes.EXCHANGES_CREATE);
             exchangeRegistry.createExchange(exchangeName, Exchange.Type.from(type), durable);
+            authHandler.createAuthResource(ResourceTypes.EXCHANGE, exchangeName, durable);
         } finally {
             lock.writeLock().unlock();
         }
     }
 
-    boolean deleteExchange(String exchangeName, boolean ifUnused) throws BrokerException, ValidationException {
+    boolean deleteExchange(String exchangeName, boolean ifUnused)
+            throws BrokerException, ValidationException, BrokerAuthException {
         lock.writeLock().lock();
         try {
-            return exchangeRegistry.deleteExchange(exchangeName, ifUnused);
+            Exchange exchange = exchangeRegistry.getExchange(exchangeName);
+            if (Objects.nonNull(exchange)) {
+                authHandler.handle(ResourceAuthScopes.EXCHANGES_DELETE,
+                                   ResourceTypes.EXCHANGE,
+                                   exchangeName,
+                                   ResourceActions.DELETE); ;
+            }
+            boolean deleteExchange = exchangeRegistry.deleteExchange(exchangeName, ifUnused);
+            if (deleteExchange) {
+                authHandler.deleteAuthResource(ResourceTypes.EXCHANGE, exchangeName);
+            }
+            return deleteExchange;
         } finally {
             lock.writeLock().unlock();
         }
@@ -359,8 +453,12 @@ final class MessagingEngine {
             dlcMessage.getMetadata().addHeader(ORIGIN_EXCHANGE_HEADER, message.getMetadata().getExchangeName());
             dlcMessage.getMetadata().addHeader(ORIGIN_ROUTING_KEY_HEADER, message.getMetadata().getRoutingKey());
 
-            publish(dlcMessage);
+            publish(dlcMessage, exchange -> {
+            }, queue -> {
+            });
             acknowledge(queueName, message);
+        } catch (BrokerAuthException e) {
+            throw new BrokerException("Auth error while moving message to dlc.", e);
         } finally {
             message.release();
         }

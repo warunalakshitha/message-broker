@@ -30,6 +30,7 @@ import org.wso2.broker.amqp.Server;
 import org.wso2.broker.auth.AuthManager;
 import org.wso2.broker.auth.BrokerAuthConfiguration;
 import org.wso2.broker.auth.BrokerAuthConstants;
+import org.wso2.broker.auth.authorization.provider.UserStoreAuthProvider;
 import org.wso2.broker.auth.user.UserStoreManager;
 import org.wso2.broker.auth.user.impl.UserStoreManagerImpl;
 import org.wso2.broker.common.BrokerConfigProvider;
@@ -94,12 +95,19 @@ public class SuiteInitializer {
 
         // Auth configurations
         ClassLoader classLoader = getClass().getClassLoader();
-        URL resource = classLoader.getResource(BrokerAuthConstants.USERS_FILE_NAME);
+        URL resource = classLoader.getResource(BrokerAuthConstants.USERS_STORE_FILE_NAME);
         if (resource != null) {
             System.setProperty(BrokerAuthConstants.SYSTEM_PARAM_USERS_CONFIG, resource.getFile());
         }
 
         BrokerAuthConfiguration brokerAuthConfiguration = new BrokerAuthConfiguration();
+        BrokerAuthConfiguration.AuthorizationConfiguration authorizationConfiguration =
+                new BrokerAuthConfiguration.AuthorizationConfiguration();
+        BrokerAuthConfiguration.AuthProviderConfiguration authProviderConfiguration =
+                new BrokerAuthConfiguration.AuthProviderConfiguration();
+        authProviderConfiguration.setClassName(UserStoreAuthProvider.class.getCanonicalName());
+        authorizationConfiguration.setAuthProvider(authProviderConfiguration);
+        brokerAuthConfiguration.setAuthorization(authorizationConfiguration);
         configProvider.registerConfigurationObject(BrokerAuthConfiguration.NAMESPACE, brokerAuthConfiguration);
         startupContext.registerService(UserStoreManager.class, new UserStoreManagerImpl());
         AuthManager authManager = new AuthManager(startupContext);

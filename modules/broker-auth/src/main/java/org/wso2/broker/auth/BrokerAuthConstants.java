@@ -37,6 +37,8 @@ public final class BrokerAuthConstants {
     public static final String PROVIDER_NAME = "AMQSASLProvider";
     // System property to specify the path of the JaaS config file.
     public static final String SYSTEM_PARAM_JAAS_CONFIG = "java.auth.auth.login.config";
+    // jaas login module property name
+    public static final String CONFIG_PROPERTY_USER_STORE_CONNECTOR = "userStoreConnector";
     // Broker Jaas auth config
     public static final String BROKER_SECURITY_CONFIG = "BrokerSecurityConfig";
 
@@ -45,11 +47,13 @@ public final class BrokerAuthConstants {
     User store Manager related constants
    */
     // Name of the users configuration file.
-    public static final String USERS_FILE_NAME = "users.yaml";
+    public static final String USERS_STORE_FILE_NAME = "users.yaml";
     // System property to specify the path of the users config file.
     public static final String SYSTEM_PARAM_USERS_CONFIG = "broker.users.config";
     // users configuration namespace in users config file.
     public static final String USERS_CONFIG_NAMESPACE = "wso2.broker.users";
     // user manager property name
     public static final String USER_STORE_MANAGER_PROPERTY = "UserStoreManagerImpl";
+    // user manager authorization id
+    public static final String AUTHENTICATION_ID = "AuthenticationId";
 }

@@ -24,6 +24,8 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import org.wso2.broker.auth.AuthManager;
+import org.wso2.broker.auth.BrokerAuthConstants;
 import org.wso2.broker.core.Broker;
 import org.wso2.broker.core.rest.BindingsApiDelegate;
 import org.wso2.broker.core.rest.BrokerAdminService;
@@ -33,6 +35,7 @@ import org.wso2.broker.core.rest.model.Error;
 import org.wso2.broker.core.rest.model.ExchangeCreateRequest;
 import org.wso2.broker.core.rest.model.ExchangeCreateResponse;
 import org.wso2.broker.core.rest.model.ExchangeMetadata;
+import org.wso2.msf4j.Request;
 
 import javax.validation.Valid;
 import javax.ws.rs.Consumes;
@@ -44,6 +47,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
 @Path(BrokerAdminService.API_BASE_PATH + "/exchanges")
@@ -68,8 +72,12 @@ public class ExchangesApi {
         @ApiResponse(code = 201, message = "Exchange created", response = ExchangeCreateResponse.class),
         @ApiResponse(code = 400, message = "Bad Request. Invalid request or validation error.", response = Error.class),
         @ApiResponse(code = 415, message = "Unsupported media type. The entity of the request was in a not supported format.", response = Error.class) })
-    public Response createExchange(@Valid ExchangeCreateRequest body) {
-        return exchangesApiDelegate.createExchange(body);
+    public Response createExchange(@Context Request request, @Valid ExchangeCreateRequest body) {
+        return AuthManager
+                .doAuthContextAwareFunction(request.getSession()
+                                                   .getAttribute(BrokerAuthConstants.AUTHENTICATION_ID).toString(),
+                                            () -> {
+                                              return exchangesApiDelegate.createExchange(body);});
     }
 
     @DELETE
@@ -80,9 +88,13 @@ public class ExchangesApi {
         @ApiResponse(code = 200, message = "Exchange deleted", response = Void.class),
         @ApiResponse(code = 400, message = "Bad request. Invalid request or validation error.", response = Error.class),
         @ApiResponse(code = 404, message = "Exchange not found", response = Error.class) })
-    public Response deleteExchange(@PathParam("name") @ApiParam("Name of the exchange.") String name,
+    public Response deleteExchange(@Context Request request, @PathParam("name") @ApiParam("Name of the exchange.") String name,
                                    @DefaultValue("true") @QueryParam("ifUnused")    @ApiParam("Delete if the exchange has no bindings.")  Boolean ifUnused) {
-        return exchangesApiDelegate.deleteExchange(name, ifUnused);
+        return AuthManager
+                .doAuthContextAwareFunction(request.getSession()
+                                                   .getAttribute(BrokerAuthConstants.AUTHENTICATION_ID).toString(),
+                                            () -> {
+                                              return exchangesApiDelegate.deleteExchange(name, ifUnused);});
     }
 
     @GET

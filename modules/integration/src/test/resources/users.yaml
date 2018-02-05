@@ -16,15 +16,13 @@
 
 wso2.broker.users:
  users:
- -
-   username: admin
+ - username: admin
    password: admin
-   roles:
+   groups:
    - admin
 
- -
-   username: test
+ - username: test
    password: a1D-M*i2+n
-   roles:
+   groups:
    - test
 

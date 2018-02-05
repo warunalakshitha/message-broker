@@ -18,7 +18,7 @@
  */
 package org.wso2.broker.auth.authentication.authenticator;
 
-import org.wso2.broker.auth.BrokerAuthException;
+import org.wso2.broker.auth.exception.BrokerAuthException;
 import org.wso2.broker.common.StartupContext;
 
 /**

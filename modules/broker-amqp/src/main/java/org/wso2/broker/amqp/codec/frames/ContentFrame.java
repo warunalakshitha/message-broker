@@ -21,6 +21,8 @@ package org.wso2.broker.amqp.codec.frames;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.util.Attribute;
+import io.netty.util.AttributeKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wso2.broker.amqp.AmqpException;
@@ -28,6 +30,10 @@ import org.wso2.broker.amqp.codec.AmqpChannel;
 import org.wso2.broker.amqp.codec.BlockingTask;
 import org.wso2.broker.amqp.codec.InMemoryMessageAggregator;
 import org.wso2.broker.amqp.codec.handlers.AmqpConnectionHandler;
+import org.wso2.broker.auth.AuthManager;
+import org.wso2.broker.auth.BrokerAuthConstants;
+import org.wso2.broker.auth.exception.BrokerAuthException;
+import org.wso2.broker.common.ValidationException;
 import org.wso2.broker.core.BrokerException;
 import org.wso2.broker.core.Message;
 
@@ -81,13 +87,19 @@ public class ContentFrame extends GeneralFrame {
             Message message = messageAggregator.popMessage();
 
             ctx.fireChannelRead((BlockingTask) () -> {
-                try {
-                    messageAggregator.publish(message);
-                    // flow manager should always be executed through the event loop
-                    ctx.executor().submit(() -> channel.getFlowManager().notifyMessageRemoval(ctx));
-                } catch (BrokerException e) {
-                    LOGGER.warn("Content receiving failed", e);
-                }
+                Attribute<String> authorizationId =
+                        ctx.channel().attr(AttributeKey.valueOf(BrokerAuthConstants.AUTHENTICATION_ID));
+                AuthManager.doAuthContextAwareFunction(authorizationId.get(), () -> {
+                    try {
+                        messageAggregator.publish(message);
+                        // flow manager should always be executed through the event loop
+                        ctx.executor().submit(() -> channel.getFlowManager()
+                                                           .notifyMessageRemoval(
+                                                                   ctx));
+                    } catch (BrokerAuthException | ValidationException | BrokerException e) {
+                        LOGGER.warn("Content receiving failed", e);
+                    }
+                });
             });
         }
     }

@@ -18,7 +18,7 @@
  */
 package org.wso2.broker.auth.authentication.sasl.plain.jaas;
 
-import org.wso2.broker.auth.BrokerAuthException;
+import org.wso2.broker.auth.exception.BrokerAuthException;
 
 import java.io.IOException;
 import java.util.Arrays;

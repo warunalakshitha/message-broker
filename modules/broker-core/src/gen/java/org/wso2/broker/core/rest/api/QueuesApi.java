@@ -24,6 +24,8 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import org.wso2.broker.auth.AuthManager;
+import org.wso2.broker.auth.BrokerAuthConstants;
 import org.wso2.broker.core.Broker;
 import org.wso2.broker.core.rest.BindingsApiDelegate;
 import org.wso2.broker.core.rest.BrokerAdminService;
@@ -37,6 +39,7 @@ import org.wso2.broker.core.rest.model.Error;
 import org.wso2.broker.core.rest.model.QueueCreateRequest;
 import org.wso2.broker.core.rest.model.QueueCreateResponse;
 import org.wso2.broker.core.rest.model.QueueMetadata;
+import org.wso2.msf4j.Request;
 
 import javax.validation.Valid;
 import javax.ws.rs.Consumes;
@@ -48,6 +51,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
 @Path(BrokerAdminService.API_BASE_PATH + "/queues")
@@ -78,8 +82,14 @@ public class QueuesApi {
         @ApiResponse(code = 400, message = "Bad Request. Invalid request or validation error.", response = Error.class),
         @ApiResponse(code = 404, message = "Exchange not found", response = Error.class),
         @ApiResponse(code = 415, message = "Unsupported media type. The entity of the request was in a not supported format.", response = Error.class) })
-    public Response createBinding(@PathParam("name") @ApiParam("Name of the queue to bind to") String name,@Valid BindingCreateRequest body) {
-        return bindingsApiDelegate.createBinding(name, body);
+    public Response createBinding(@Context Request request, @PathParam("name")
+                                  @ApiParam("Name of the queue to bind to") String name,
+                                  @Valid BindingCreateRequest body) {
+        return AuthManager
+                .doAuthContextAwareFunction(request.getSession()
+                                                   .getAttribute(BrokerAuthConstants.AUTHENTICATION_ID).toString(),
+                                            () -> {
+                                              return bindingsApiDelegate.createBinding(name, body);});
     }
 
     @POST
@@ -90,8 +100,13 @@ public class QueuesApi {
         @ApiResponse(code = 201, message = "Queue created.", response = QueueCreateResponse.class),
         @ApiResponse(code = 400, message = "Bad Request. Invalid request or validation error.", response = Error.class),
         @ApiResponse(code = 415, message = "Unsupported media type. The entity of the request was in a not supported format.", response = Error.class) })
-    public Response createQueue(@Valid QueueCreateRequest body) {
-        return queuesApiDelegate.createQueue(body);
+    public Response createQueue(@Context Request request, @Valid QueueCreateRequest body) {
+
+        return AuthManager
+                .doAuthContextAwareFunction(request.getSession()
+                                                   .getAttribute(BrokerAuthConstants.AUTHENTICATION_ID).toString(),
+                                            () -> {
+                                              return queuesApiDelegate.createQueue(body);});
     }
 
     @DELETE
@@ -125,8 +140,15 @@ public class QueuesApi {
         @ApiResponse(code = 200, message = "Queue deleted", response = Void.class),
         @ApiResponse(code = 400, message = "Bad request. Invalid request or validation error.", response = Error.class),
         @ApiResponse(code = 404, message = "Queue not found", response = Error.class) })
-    public Response deleteQueue(@PathParam("name") @ApiParam("Name of the queue") String name,@DefaultValue("true") @QueryParam("ifUnused")    @ApiParam("If set to true, queue will be deleted only if the queue has no active consumers.")  Boolean ifUnused,@DefaultValue("true") @QueryParam("ifEmpty") @ApiParam("If set to true, queue will be deleted only if the queue is empty.")  Boolean ifEmpty) {
-        return queuesApiDelegate.deleteQueue(name, ifUnused, ifEmpty);
+    public Response deleteQueue(@Context Request request, @PathParam("name") @ApiParam("Name of the queue") String
+            name,@DefaultValue("true") @QueryParam("ifUnused") @ApiParam("If set to true, queue will be deleted "+
+                                                                                                                                               "only if the queue has no active consumers.")  Boolean ifUnused,@DefaultValue("true") @QueryParam("ifEmpty") @ApiParam("If set to true, queue will be deleted only if the queue is empty.")  Boolean ifEmpty) {
+        return AuthManager
+                .doAuthContextAwareFunction(request.getSession()
+                                                   .getAttribute(BrokerAuthConstants.AUTHENTICATION_ID).toString(),
+                                            () -> {
+                                              return queuesApiDelegate.deleteQueue(name, ifUnused, ifEmpty);
+                                          });
     }
 
     @GET

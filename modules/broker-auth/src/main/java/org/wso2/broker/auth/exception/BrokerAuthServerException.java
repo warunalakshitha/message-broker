@@ -16,25 +16,20 @@
  *   under the License.
  *
  */
-package org.wso2.broker.auth.authentication.authenticator.impl;
-
-import org.wso2.broker.auth.BrokerAuthConfiguration;
-import org.wso2.broker.auth.authentication.authenticator.Authenticator;
-import org.wso2.broker.common.StartupContext;
+package org.wso2.broker.auth.exception;
 
 /**
- * Disabled authentication representation for @{@link Authenticator}.
+ * This Exception class represents login failures.
  */
-public class NoAuthenticator implements Authenticator {
+public class BrokerAuthServerException extends Exception {
 
-    @Override
-    public void initialize(StartupContext startupContext,
-                           BrokerAuthConfiguration.AuthenticationConfiguration authenticationConfiguration) {
-        // nothing to do when authentication is disabled.
+    private static final long serialVersionUID = -789366491889824767L;
+
+    public BrokerAuthServerException(String message) {
+        super(message);
     }
 
-    @Override
-    public boolean authenticate(String username, char[] credentials) {
-        return true;
+    public BrokerAuthServerException(String message, Throwable throwable) {
+        super(message, throwable);
     }
 }

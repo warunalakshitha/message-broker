@@ -20,9 +20,9 @@ package org.wso2.broker.auth.authentication.authenticator.impl;
 
 import org.wso2.broker.auth.BrokerAuthConfiguration;
 import org.wso2.broker.auth.BrokerAuthConstants;
-import org.wso2.broker.auth.BrokerAuthException;
 import org.wso2.broker.auth.authentication.authenticator.Authenticator;
 import org.wso2.broker.auth.authentication.sasl.plain.PlainSaslCallbackHandler;
+import org.wso2.broker.auth.exception.BrokerAuthException;
 import org.wso2.broker.auth.user.UserStoreManager;
 import org.wso2.broker.common.BrokerConfigProvider;
 import org.wso2.broker.common.StartupContext;
@@ -70,17 +70,17 @@ public class JaasAuthenticator implements Authenticator {
     }
 
     /**
-<<<<<<< 02df7854124d447fb8bbb606a84f7e45cae02e62
+     * <<<<<<< 02df7854124d447fb8bbb606a84f7e45cae02e62
      * Creates Jaas config.
      *
      * @param loginModuleClassName jaas login module class name
-     * @param userStoreManager user store manager use for authenticate users
-     * @param options initial options for login module
+     * @param userStoreManager     user store manager use for authenticate users
+     * @param options              initial options for login module
      * @return login configuration
      */
     private static Configuration createJaasConfig(String loginModuleClassName,
-                                           UserStoreManager userStoreManager,
-                                           Map<String, Object> options) {
+                                                  UserStoreManager userStoreManager,
+                                                  Map<String, Object> options) {
         options.put(BrokerAuthConstants.USER_STORE_MANAGER_PROPERTY, userStoreManager);
         AppConfigurationEntry[] entries = {
                 new AppConfigurationEntry(loginModuleClassName,

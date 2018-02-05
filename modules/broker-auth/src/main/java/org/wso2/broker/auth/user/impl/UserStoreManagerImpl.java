@@ -21,11 +21,12 @@ package org.wso2.broker.auth.user.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wso2.broker.auth.BrokerAuthConstants;
-import org.wso2.broker.auth.BrokerAuthException;
+import org.wso2.broker.auth.exception.BrokerAuthException;
 import org.wso2.broker.auth.user.UserStoreManager;
 import org.wso2.broker.auth.user.config.UserConfig;
 import org.wso2.broker.auth.user.config.UsersFile;
 import org.wso2.broker.auth.user.dto.User;
+import org.wso2.broker.common.StartupContext;
 import org.wso2.carbon.config.ConfigProviderFactory;
 import org.wso2.carbon.config.ConfigurationException;
 import org.wso2.carbon.config.provider.ConfigProvider;
@@ -58,7 +59,7 @@ public class UserStoreManagerImpl implements UserStoreManager {
         String usersFilePath = System.getProperty(BrokerAuthConstants.SYSTEM_PARAM_USERS_CONFIG);
         if (usersFilePath == null || usersFilePath.trim().isEmpty()) {
             // use current path.
-            usersYamlFile = Paths.get("", BrokerAuthConstants.USERS_FILE_NAME).toAbsolutePath();
+            usersYamlFile = Paths.get("", BrokerAuthConstants.USERS_STORE_FILE_NAME).toAbsolutePath();
         } else {
             usersYamlFile = Paths.get(usersFilePath).toAbsolutePath();
         }
@@ -71,12 +72,17 @@ public class UserStoreManagerImpl implements UserStoreManager {
                 if (userConfig != null && userConfig.getUsername() != null) {
                     userRegistry.put(userConfig.getUsername(), new User(userConfig.getUsername(),
                                                                         userConfig.getPassword().toCharArray(),
-                                                                        new HashSet<>(userConfig.getRoles())));
+                                                                        new HashSet<>(userConfig.getGroups())));
                 } else {
                     LOGGER.error("User or username can not be null");
                 }
             }
         }
+    }
+
+    @Override
+    public void initialize(StartupContext startupContext) throws Exception {
+
     }
 
     /**
@@ -113,7 +119,7 @@ public class UserStoreManagerImpl implements UserStoreManager {
     public Set<String> getUserRoleList(String userId) {
         User user = userRegistry.get(userId);
         if (user != null) {
-            return user.getRoles();
+            return user.getGroups();
         }
         return null;
     }

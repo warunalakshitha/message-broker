@@ -25,12 +25,17 @@ import org.wso2.broker.auth.authentication.authenticator.AuthenticatorFactory;
 import org.wso2.broker.auth.authentication.sasl.BrokerSecurityProvider;
 import org.wso2.broker.auth.authentication.sasl.SaslServerBuilder;
 import org.wso2.broker.auth.authentication.sasl.plain.PlainSaslServerBuilder;
+import org.wso2.broker.auth.authorization.AuthProvider;
+import org.wso2.broker.auth.authorization.AuthProviderFactory;
+import org.wso2.broker.auth.authorization.Authorizer;
+import org.wso2.broker.auth.authorization.AuthorizerFactory;
 import org.wso2.broker.common.BrokerConfigProvider;
 import org.wso2.broker.common.StartupContext;
 
 import java.security.Security;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
@@ -54,13 +59,19 @@ public class AuthManager {
      */
     private Authenticator authenticator;
 
-    public AuthManager(StartupContext startupContext)  throws Exception {
+    private Authorizer authorizer;
+
+    private static ThreadLocal<String> authContext = new ThreadLocal<>();
+
+    public AuthManager(StartupContext startupContext) throws Exception {
         BrokerConfigProvider configProvider = startupContext.getService(BrokerConfigProvider.class);
         brokerAuthConfiguration = configProvider
                 .getConfigurationObject(BrokerAuthConfiguration.NAMESPACE, BrokerAuthConfiguration.class);
         startupContext.registerService(AuthManager.class, this);
         authenticator = new AuthenticatorFactory().getAuthenticator(startupContext,
                                                                     brokerAuthConfiguration.getAuthentication());
+        AuthProvider authProvider = new AuthProviderFactory().getAuthorizer(brokerAuthConfiguration, startupContext);
+        authorizer = new AuthorizerFactory().getAutStore(authProvider, brokerAuthConfiguration, startupContext);
     }
 
     public void start() {
@@ -119,6 +130,7 @@ public class AuthManager {
 
     /**
      * Provides broker authentication enabled.
+     *
      * @return broker authentication enabled or not
      */
     public boolean isAuthenticationEnabled() {
@@ -127,9 +139,41 @@ public class AuthManager {
 
     /**
      * Provides authenticator which will be used to authenticate users.
+     *
      * @return broker authenticator
      */
     public Authenticator getAuthenticator() {
         return authenticator;
+    }
+
+    /**
+     * Provides authorizer which will be used to authorize users for broker resources.
+     *
+     * @return broker authorizer
+     */
+    public Authorizer getAuthorizer() {
+        return authorizer;
+    }
+
+    public static ThreadLocal<String> getAuthContext() {
+        return authContext;
+    }
+
+    public static void doAuthContextAwareFunction(String userId, Runnable runnable) {
+        try {
+            authContext.set(userId);
+            runnable.run();
+        } finally {
+            authContext.remove();
+        }
+    }
+
+    public static <T> T doAuthContextAwareFunction(String userId, Supplier<T> supplier) {
+        try {
+            authContext.set(userId);
+            return supplier.get();
+        } finally {
+            authContext.remove();
+        }
     }
 }
